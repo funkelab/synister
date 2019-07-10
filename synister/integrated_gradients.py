@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 import numpy as np
 
-def get_integrated_gradients(model, checkpoint_file, raw, baseline, target_id, integration_steps=50):
+def get_integrated_gradients(model, raw, baseline, target_id, integration_steps=50):
     """
     Given a pytorch model whose output are class logits this
     function returns integrated gradients for any given input and 
@@ -13,10 +13,6 @@ def get_integrated_gradients(model, checkpoint_file, raw, baseline, target_id, i
     model (``object``):
         
         Pytorch model
-
-    checkpoint_file(``string``):
-
-        Path to model checkpoint file
 
     raw (``ndarray``): 
     
@@ -39,17 +35,17 @@ def get_integrated_gradients(model, checkpoint_file, raw, baseline, target_id, i
 
     gradients = []
     # Get inputs on line between baseline and raw
-    inputs = get_inputs(baseline, raw)
+    inputs = get_inputs(baseline, raw, integration_steps)
     for in_raw in inputs:
         raw_batched = in_raw.reshape((1,) + np.shape(raw))
-        raw_batched_tensor = torch.tensor(raw, device=device, requires_grad=True)
+        raw_batched_tensor = torch.tensor(raw_batched.astype(np.float32), device=device, requires_grad=True)
         
         # predict
         output = model(raw=raw_batched_tensor)
         output = F.softmax(output, dim=1)
        
         # get gradient
-        index = np.ones((output.size()[0], 1)) * target_idx
+        index = np.ones((output.size()[0], 1)) * target_id
         index = torch.tensor(index, dtype=torch.int64, device=device)
         output = output.gather(1, index)
         model.zero_grad()
