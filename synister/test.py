@@ -63,7 +63,7 @@ def predict_all(checkpoint_file,
                               complete_brain)
 
                 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-                output = predict(raw, model)
+                output, _ = predict(raw, model)
                 data_synapse = {"prediction": output[0].tolist(),
                                 "loc": loc,
                                 "type": synapse}
@@ -81,7 +81,7 @@ def predict_all(checkpoint_file,
                                       synapse,
                                       loc,
                                       complete_brain)
-                        output = predict(raw, model)
+                        output, _ = predict(raw, model)
                         data_synapse = {"prediction": output[0].tolist(),
                                         "loc": loc.tolist(),
                                         "type": synapse}
@@ -94,7 +94,7 @@ def predict_all(checkpoint_file,
                                       synapse,
                                       loc,
                                       complete_brain)
-                    output = predict(raw, model)
+                    output, _ = predict(raw, model)
                     data_synapse = {"prediction": output[0].tolist(),
                                     "loc": loc.tolist(),
                                     "type": synapse}
