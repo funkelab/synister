@@ -108,15 +108,9 @@ def predict(raw,
             model):
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    # [0.0, 255.0]
-    raw = raw.astype(np.float32)
-    # [0.0, 1.0]
-    raw /= 255.0
-    # [-1.0, 1.0]
-    raw = raw*2.0 - 1.0
 
     raw_batched = raw.reshape((1,) + np.shape(raw))
-    raw_batched_tensor = torch.tensor(raw_batched, device=device, requires_grad=True)
+    raw_batched_tensor = torch.tensor(raw_batched, device=device)
     output = model(raw=raw_batched_tensor)
     output = F.softmax(output, dim=1)
 
@@ -142,7 +136,12 @@ def get_raw(input_shape,
 
     # [0, 255]
     raw = complete_brain[roi].to_ndarray()
-
+    # [0.0, 255.0]
+    raw = raw.astype(np.float32)
+    # [0.0, 1.0]
+    raw /= 255.0
+    # [-1.0, 1.0]
+    raw = raw*2.0 - 1.0
     return raw
 
 
