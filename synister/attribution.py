@@ -11,6 +11,7 @@ import json
 import numpy as np
 import h5py
 from integrated_gradients import get_integrated_gradients
+from test import predict, get_raw
 
 def get_attribution(checkpoint_file,
                     data_dir,
@@ -144,46 +145,6 @@ def get_attribution(checkpoint_file,
 
             target_id += 1
 
-
-def predict(raw,
-            model):
-
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-    raw_batched = np.reshape(raw, (1,) + np.shape(raw))
-    raw_batched_tensor = torch.tensor(raw_batched, device=device)
-    output = model(raw=raw_batched_tensor)
-    output = F.softmax(output, dim=1)
-
-    return output, raw_batched_tensor
-
-
-def get_raw(input_shape,
-            voxel_size,
-            synapse_type,
-            loc,
-            complete_brain):
-
-    size = (input_shape*voxel_size)
-    offset = loc - (input_shape/2*voxel_size)
-
-    roi = daisy.Roi(offset, size).snap_to_grid(voxel_size, mode='closest')
-    # if rounding changed the size, reset it here:
-    if roi.get_shape()[0] != size[0]:
-        roi.set_shape(size)
-
-    if not complete_brain.roi.contains(roi):
-        print("WARNING: synapse at %s is not contained in FAFB volume" % loc)
-
-    # [0, 255]
-    raw = complete_brain[roi].to_ndarray()
-    # [0.0, 255.0]
-    raw = raw.astype(np.float32)
-    # [0.0, 1.0]
-    raw /= 255.0
-    # [-1.0, 1.0]
-    raw = raw*2.0 - 1.0
-    return raw
 
 
 if __name__ == "__main__":
