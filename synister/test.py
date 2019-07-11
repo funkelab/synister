@@ -56,14 +56,14 @@ def predict_all(checkpoint_file,
         for synapse, locations in synapse_location:
             # loop through all testing sample locations of this class
             for loc in locations:
-                raw = get_raw(input_shape,
+                raw, raw_normalized = get_raw(input_shape,
                               voxel_size,
                               synapse,
                               loc,
                               complete_brain)
 
                 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-                output, _ = predict(raw, model)
+                output, _ = predict(raw_normalized, model)
                 data_synapse = {"prediction": output[0].tolist(),
                                 "loc": loc,
                                 "type": synapse}
@@ -76,12 +76,12 @@ def predict_all(checkpoint_file,
             if synapse == synapse_type:
                 if synapse_number is None:
                     for loc in locations:
-                        raw = get_raw(input_shape,
+                        raw, raw_normalized = get_raw(input_shape,
                                       voxel_size,
                                       synapse,
                                       loc,
                                       complete_brain)
-                        output, _ = predict(raw, model)
+                        output, _ = predict(raw_normalized, model)
                         data_synapse = {"prediction": output[0].tolist(),
                                         "loc": loc.tolist(),
                                         "type": synapse}
@@ -89,12 +89,12 @@ def predict_all(checkpoint_file,
                         prediction.append(data_synapse)
                 else:
                     loc = locations[synapse_number]
-                    raw = get_raw(input_shape,
+                    raw, raw_normalized = get_raw(input_shape,
                                       voxel_size,
                                       synapse,
                                       loc,
                                       complete_brain)
-                    output, _ = predict(raw, model)
+                    output, _ = predict(raw_normalized, model)
                     data_synapse = {"prediction": output[0].tolist(),
                                     "loc": loc.tolist(),
                                     "type": synapse}
@@ -139,10 +139,10 @@ def get_raw(input_shape,
     # [0.0, 255.0]
     raw = raw.astype(np.float32)
     # [0.0, 1.0]
-    raw /= 255.0
+    raw_normalized = raw/255.0
     # [-1.0, 1.0]
-    raw = raw*2.0 - 1.0
-    return raw
+    raw_normalized = raw_normalized*2.0 - 1.0
+    return raw, raw_normalized
 
 
 if __name__ == "__main__":
