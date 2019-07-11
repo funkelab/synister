@@ -47,9 +47,9 @@ def get_integrated_gradients(model, raw, baseline, target_id, integration_steps=
         # get gradient
         index = np.ones((output.size()[0], 1)) * target_id
         index = torch.tensor(index, dtype=torch.int64, device=device)
-        output = output.gather(1, index)
+        output_idx = output.gather(1, index)
         model.zero_grad()
-        output.backward()
+        output_idx.backward()
         gradient = raw_batched_tensor.grad.detach().cpu().numpy()[0]
         gradients.append(gradient)
 
