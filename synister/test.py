@@ -65,7 +65,7 @@ def predict_all(checkpoint_file,
                 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
                 output, _ = predict(raw_normalized, model)
                 data_synapse = {"prediction": output[0].tolist(),
-                                "loc": loc,
+                                "loc": loc.tolist(),
                                 "type": synapse}
 
                 prediction.append(data_synapse)
