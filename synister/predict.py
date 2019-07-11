@@ -1,14 +1,6 @@
-from gunpowder import *
-from gunpowder.ext import torch
-from gunpowder.torch import *
 import torch.nn.functional as F
-import daisy
 import torch
-import Vgg3D        # import Vgg3D from a seperate file
-import sys
-import os
-import json
-import numpy as np
+import Vgg3D
 import logging
 
 logger = logging.getLogger(__name__)
