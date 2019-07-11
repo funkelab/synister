@@ -71,7 +71,7 @@ def get_attribution(checkpoint_file,
             # loop through all testing sample locations of this class
             i = 0
             for loc in locations:
-                raw = get_raw(input_shape,
+                raw, raw_normalized = get_raw(input_shape,
                               voxel_size,
                               synapse,
                               loc,
@@ -79,7 +79,7 @@ def get_attribution(checkpoint_file,
 
                 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
                 output, average_grads, integrated_grads, _ = get_integrated_gradients(model, 
-                                                                                        raw, 
+                                                                                        raw_normalized, 
                                                                                         baseline, 
                                                                                         target_id, 
                                                                                         integration_steps)
@@ -87,7 +87,7 @@ def get_attribution(checkpoint_file,
                 output_file = os.path.join(output_dir, "grads_{}{}_{}.h5".format(target_id, synapse, i))
                 with h5py.File(output_file, "w") as f:
                     f.create_dataset("output", data=output.detach().cpu().numpy())
-                    f.create_dataset("raw", data=raw)
+                    f.create_dataset("raw", data=raw/255.)
                     f.create_dataset("average_grads", data=average_grads)
                     f.create_dataset("location", data=loc)
 
@@ -102,14 +102,14 @@ def get_attribution(checkpoint_file,
                 if synapse_number is None:
                     i = 0
                     for loc in locations:
-                        raw = get_raw(input_shape,
+                        raw, raw_normalized = get_raw(input_shape,
                                       voxel_size,
                                       synapse,
                                       loc,
                                       complete_brain)
 
                         output, average_grads, integrated_grads, _ = get_integrated_gradients(model, 
-                                                                                        raw, 
+                                                                                        raw_normalized, 
                                                                                         baseline, 
                                                                                         target_id, 
                                                                                         integration_steps)
@@ -117,21 +117,21 @@ def get_attribution(checkpoint_file,
                         output_file = os.path.join(output_dir, "grads_{}{}_{}.h5".format(target_id, synapse, i))
                         with h5py.File(output_file, "w") as f:
                             f.create_dataset("output", data=output.detach().cpu().numpy())
-                            f.create_dataset("raw", data=raw)
+                            f.create_dataset("raw", data=raw/255.)
                             f.create_dataset("average_grads", data=average_grads)
                             f.create_dataset("location", data=loc)
 
                         i += 1
                 else:
                     loc = locations[synapse_number]
-                    raw = get_raw(input_shape,
+                    raw, raw_normalized = get_raw(input_shape,
                                       voxel_size,
                                       synapse,
                                       loc,
                                       complete_brain)
 
                     output, average_grads, integrated_grads, _ = get_integrated_gradients(model, 
-                                                                                        raw, 
+                                                                                        raw_normalized, 
                                                                                         baseline, 
                                                                                         target_id, 
                                                                                         integration_steps)
@@ -139,7 +139,7 @@ def get_attribution(checkpoint_file,
                     output_file = os.path.join(output_dir, "grads_{}{}_{}.h5".format(target_id, synapse, synapse_number))
                     with h5py.File(output_file, "w") as f:
                         f.create_dataset("output", data=output.detach().cpu().numpy())
-                        f.create_dataset("raw", data=raw)
+                        f.create_dataset("raw", data=raw/255.)
                         f.create_dataset("average_grads", data=average_grads)
                         f.create_dataset("location", data=loc)
 
@@ -158,6 +158,27 @@ if __name__ == "__main__":
                     data_dir,
                     output_dir,
                     baseline=None,
-                    integration_steps=50,
-                    synapse_type='gaba',
-                    synapse_number=5)
+                    integration_steps=50)
+
+    """
+    synapse_types = [
+        'gaba',
+        'acetylcholine',
+        'glutamate',
+        'serotonin',
+        'octopamine',
+        'dopamine'
+    ]
+
+    synapse_number = [1,2,3,4,6,7,8,9]
+
+    for synapse in synapse_types:
+        for n in synapse_number:
+            get_attribution(checkpoint_file,
+                            data_dir,
+                            output_dir,
+                            baseline=None,
+                            integration_steps=50,
+                            synapse_type=synapse,
+                            synapse_number=n)
+    """
