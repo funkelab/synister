@@ -44,10 +44,10 @@ def get_raw(locs,
 
     for loc in locs:
         offset_nm = loc - (size/2*voxel_size)
-        roi = daisy.Roi(offset, size).snap_to_grid(voxel_size, mode='closest')
+        roi = daisy.Roi(offset_nm, size_nm).snap_to_grid(voxel_size, mode='closest')
 
         if roi.get_shape()[0] != size[0]:
-            roi.set_shape(size)
+            roi.set_shape(size_nm)
 
         if not dataset.roi.contains(roi):
             logger.WARNING("Location %s is not fully contained in dataset" % loc)
