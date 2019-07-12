@@ -22,7 +22,7 @@ def init_vgg(checkpoint_file,
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = Vgg3D.Vgg3D(input_size=input_shape, fmaps=fmaps)
     model.to(device)
-    logger.info("Init vgg with checkpoint: ", checkpoint_file)
+    logger.info("Init vgg with checkpoint {}".format(checkpoint_file))
     checkpoint = torch.load(checkpoint_file)
     model.load_state_dict(checkpoint['model_state_dict'])
     return model
