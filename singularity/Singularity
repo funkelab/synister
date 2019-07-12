@@ -12,8 +12,12 @@ mkdir -p ${SINGULARITY_ROOTFS}/src/zarr
 mkdir -p ${SINGULARITY_ROOTFS}/src/gunpowder
 mkdir -p ${SINGULARITY_ROOTFS}/src/daisy
 mkdir -p ${SINGULARITY_ROOTFS}/src/funlib
+mkdir -p ${SINGULARITY_ROOTFS}/src/synister
 
 %files
+synister /src/synister/synister
+setup.py /src/synister/setup.py
+requirements.txt /src/synister/requirements.txt
 
 %labels
 maintainer funkej@janelia.hhmi.org
@@ -33,6 +37,7 @@ liblzma-dev \
 libsm6 \
 libxext6 \
 libxrender-dev \
+libmlpack-dev \
 wget && \
 rm -rf /var/lib/apt/lists/*
 
@@ -123,7 +128,7 @@ python setup.py install
 
 GUNPOWDER_ROOT=/src/gunpowder
 GUNPOWDER_REPOSITORY=https://github.com/funkey/gunpowder.git
-GUNPOWDER_REVISION=d39e524e50ac19bbb9d373c88465b63474378d9c
+GUNPOWDER_REVISION=754607abcd3c84ec28c0d2ea257b969934ce986d
 
 cd ${GUNPOWDER_ROOT}
 git clone ${GUNPOWDER_REPOSITORY} . && \
@@ -157,6 +162,12 @@ PYTHONPATH=${FUNLIB_ROOT}:$PYTHONPATH
 # install pytorch
 conda install pytorch torchvision cudatoolkit=9.0 -c pytorch
 
+# install synister
+cd /src/synister
+#pip install -r requirements.txt
+python setup.py build_ext --inplace
+PYTHONPATH=/src/synister:$PYTHONPATH
+
 pip install mahotas
 pip install pymongo
 pip install opencv-python
@@ -178,6 +189,8 @@ export PYTHONPATH=${DAISY_ROOT}:$PYTHONPATH
 export FUNLIB_ROOT=/src/funlib
 export PYTHONPATH=${FUNLIB_ROOT}:$PYTHONPATH
 export PATH=/miniconda/bin:${PATH}
+export SYNISTER_ROOT=/src/synister
+export PYTHONPATH=${SYNISTER_ROOT}:$PYTHONPATH
 
 # disable threads for numpy and the like, they get into our way when we
 # pre-fetch batches using multiple processes
