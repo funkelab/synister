@@ -6,11 +6,10 @@ import logging
 
 input_shape = Coordinate((32, 128, 128))
 fmaps = 32
-num_levels = 4
 batch_size = 8
 class Vgg3D(torch.nn.Module):
 
-    def __init__(self, input_size, fmaps):
+    def __init__(self, input_size, fmaps, downsample_factors=[(2,2,2), (2,2,2), (2,2,2), (2,2,2)]):
 
         super(Vgg3D, self).__init__()
 
@@ -18,7 +17,7 @@ class Vgg3D(torch.nn.Module):
         current_size = Coordinate(input_size)
 
         features = []
-        for i in range(num_levels):
+        for i in range(len(downsample_factors)):
 
             features += [
                 torch.nn.Conv3d(
@@ -35,7 +34,7 @@ class Vgg3D(torch.nn.Module):
                     padding=1),
                 torch.nn.BatchNorm3d(fmaps),
                 torch.nn.ReLU(inplace=True),
-                torch.nn.MaxPool3d((2, 2, 2))
+                torch.nn.MaxPool3d(downsample_factors[i])
             ]
 
             current_fmaps = fmaps
