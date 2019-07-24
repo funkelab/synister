@@ -37,11 +37,9 @@ def get_integrated_gradients(model, raw, baseline, target_id, integration_steps=
     # Get inputs on line between baseline and raw
     inputs = get_inputs(baseline, raw, integration_steps)
     for in_raw in inputs:
-        raw_batched = in_raw.reshape((1,) + np.shape(raw))
-        raw_batched_tensor = torch.tensor(raw_batched.astype(np.float32), device=device, requires_grad=True)
-        
         # predict
-        output = model(raw=raw_batched_tensor)
+        in_raw_tensor = torch.tensor(in_raw.astype(np.float32), device=device, requires_grad=True)
+        output = model(raw=in_raw_tensor)
         output = F.softmax(output, dim=1)
        
         # get gradient
@@ -50,12 +48,12 @@ def get_integrated_gradients(model, raw, baseline, target_id, integration_steps=
         output_idx = output.gather(1, index)
         model.zero_grad()
         output_idx.backward()
-        gradient = raw_batched_tensor.grad.detach().cpu().numpy()[0]
+        gradient = in_raw_tensor.grad.detach().cpu().numpy()[0]
         gradients.append(gradient)
 
     integrated_grads = np.sum(gradients[:-1], axis=0)
     average_grads = np.average(gradients[:-1], axis=0)
-    return output, average_grads, integrated_grads, raw
+    return output, average_grads, integrated_grads, in_raw
 
 def get_inputs(baseline, raw, steps):
     inputs = [baseline + (float(i)/steps) * (raw - baseline) for i in range(0, steps+1)]
