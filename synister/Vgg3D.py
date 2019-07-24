@@ -41,7 +41,7 @@ class Vgg3D(torch.nn.Module):
             fmaps *= 2
 
             size = current_size / downsample_factors[i]
-            assert size * downsample_factor[i] == current_size, \
+            assert size * downsample_factors[i] == current_size, \
                 "Can not downsample %s by chosen downsample factor" % (current_size,)
             current_size = size
 
