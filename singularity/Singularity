@@ -3,16 +3,13 @@ From: ubuntu:18.04
 
 %setup
 mkdir -p ${SINGULARITY_ROOTFS}/src/malis
-mkdir -p ${SINGULARITY_ROOTFS}/src/augment
-mkdir -p ${SINGULARITY_ROOTFS}/src/dvision
 mkdir -p ${SINGULARITY_ROOTFS}/src/mala
-mkdir -p ${SINGULARITY_ROOTFS}/src/waterz
 mkdir -p ${SINGULARITY_ROOTFS}/src/numcodecs
 mkdir -p ${SINGULARITY_ROOTFS}/src/zarr
 mkdir -p ${SINGULARITY_ROOTFS}/src/gunpowder
 mkdir -p ${SINGULARITY_ROOTFS}/src/daisy
-mkdir -p ${SINGULARITY_ROOTFS}/src/funlib
 mkdir -p ${SINGULARITY_ROOTFS}/src/synister
+mkdir -p ${SINGULARITY_ROOTFS}/src/funlib/learn/torch
 
 %files
 synister /src/synister/synister
@@ -66,25 +63,6 @@ git checkout ${MALIS_REVISION}
 python setup.py build_ext --inplace
 PYTHONPATH=${MALIS_ROOT}:$PYTHONPATH
 
-AUGMENT_ROOT=/src/augment
-AUGMENT_REPOSITORY=https://github.com/funkey/augment.git
-AUGMENT_REVISION=4a42b01ccad7607b47a1096e904220729dbcb80a
-
-cd ${AUGMENT_ROOT}
-git clone ${AUGMENT_REPOSITORY} . && \
-git checkout ${AUGMENT_REVISION}
-pip install -r requirements.txt
-PYTHONPATH=${AUGMENT_ROOT}:$PYTHONPATH
-
-DVISION_ROOT=/src/dvision
-DVISION_REPOSITORY=https://github.com/TuragaLab/dvision.git
-DVISION_REVISION=v0.1.1
-
-cd ${DVISION_ROOT}
-git clone -b ${DVISION_REVISION} --depth 1 ${DVISION_REPOSITORY} .
-pip install -r requirements.txt
-PYTHONPATH=${DVISION_ROOT}:$PYTHONPATH
-
 MALA_ROOT=/src/mala
 MALA_REPOSITORY=https://github.com/funkey/mala.git
 MALA_REVISION=465b02ffce4204a4c1922f2b316a8b447ec4eb9b
@@ -94,16 +72,6 @@ git clone ${MALA_REPOSITORY} . && \
 git checkout ${MALA_REVISION}
 python setup.py build_ext --inplace
 PYTHONPATH=${MALA_ROOT}:$PYTHONPATH
-
-WATERZ_ROOT=/src/waterz
-WATERZ_REPOSITORY=https://github.com/funkey/waterz
-WATERZ_REVISION=8ccd0b308fed604d143577f128420da83ff444da
-
-cd ${WATERZ_ROOT}
-git clone ${WATERZ_REPOSITORY} . && \
-git checkout ${WATERZ_REVISION}
-mkdir -p /.cython/inline
-python setup.py install
 
 NUMCODECS_ROOT=/src/numcodecs
 NUMCODECS_REPOSITORY=https://github.com/funkey/numcodecs
@@ -148,16 +116,16 @@ pip install -r requirements.txt
 python setup.py build_ext --inplace
 PYTHONPATH=${DAISY_ROOT}:$PYTHONPATH
 
-FUNLIB_ROOT=/src/funlib
-FUNLIB_REPOSITORY=https://github.com/funkelab/funlib.segment
-FUNLIB_REVISION=09246e7aed32210747800906846d03788ca10b81
+FUNLIB_LEARN_ROOT=/src/funlib/learn/torch
+FUNLIB_LEARN_REPOSITORY=https://github.com/funkelab/funlib.learn.torch.git
+FUNLIB_LEARN_REVISION=0f0ac86253c86db32ab94a073845ee1b544db9b8
 
-cd ${FUNLIB_ROOT}
-git clone ${FUNLIB_REPOSITORY} . && \
-git checkout ${FUNLIB_REVISION}
-pip install -r requirements.txt
+cd ${FUNLIB_LEARN_ROOT}
+git clone ${FUNLIB_LEARN_REPOSITORY} . && \
+git checkout ${FUNLIB_LEARN_REVISION}
+#pip install -r requirements.txt
 python setup.py build_ext --inplace
-PYTHONPATH=${FUNLIB_ROOT}:$PYTHONPATH
+PYTHONPATH=${FUNLIB_LEARN_ROOT}:$PYTHONPATH
 
 # install pytorch
 conda install pytorch torchvision cudatoolkit=9.0 -c pytorch
@@ -172,13 +140,10 @@ pip install mahotas
 pip install pymongo
 pip install opencv-python
 
-
 %environment
 export MALIS_ROOT=/src/malis
 export PYTHONPATH=${MALIS_ROOT}:$PYTHONPATH
-export AUGMENT_ROOT=/src/augment
 export PYTHONPATH=${AUGMENT_ROOT}:$PYTHONPATH
-export DVISION_ROOT=/src/dvision
 export PYTHONPATH=${DVISION_ROOT}:$PYTHONPATH
 export MALA_ROOT=/src/mala
 export PYTHONPATH=${MALA_ROOT}:$PYTHONPATH
@@ -186,11 +151,11 @@ export GUNPOWDER_ROOT=/src/gunpowder
 export PYTHONPATH=${GUNPOWDER_ROOT}:$PYTHONPATH
 export DAISY_ROOT=/src/daisy
 export PYTHONPATH=${DAISY_ROOT}:$PYTHONPATH
-export FUNLIB_ROOT=/src/funlib
-export PYTHONPATH=${FUNLIB_ROOT}:$PYTHONPATH
 export PATH=/miniconda/bin:${PATH}
 export SYNISTER_ROOT=/src/synister
 export PYTHONPATH=${SYNISTER_ROOT}:$PYTHONPATH
+export FUNLIB_LEARN_ROOT=/src/funlib/learn/torch
+export PYTHONPATH=${FUNLIB_LEARN_ROOT}:$PYTHONPATH
 
 # disable threads for numpy and the like, they get into our way when we
 # pre-fetch batches using multiple processes

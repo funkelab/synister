@@ -1,6 +1,7 @@
 from pymongo import MongoClient, IndexModel, ASCENDING
-import ConfigParser
+from configparser import ConfigParser
 from copy import deepcopy
+import logging
 
 logger = logging.getLogger(__name__)
 
