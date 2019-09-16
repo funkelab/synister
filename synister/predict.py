@@ -1,6 +1,6 @@
 import torch.nn.functional as F
 import torch
-import synister.Vgg3D as Vgg3D
+from funlib.learn.torch import Vgg3D
 import logging
 
 logger = logging.getLogger(__name__)

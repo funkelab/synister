@@ -7,7 +7,7 @@ import math
 import numpy as np
 import os
 import sys
-import Vgg3D
+from funlib.learn.torch import Vgg3D
 
 torch.backends.cudnn.enabled = False
 
