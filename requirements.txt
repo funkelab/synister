@@ -7,6 +7,7 @@ torch
 -e git+https://github.com/funkey/zarr.git@9ddf849a6e3329f5ff361ebf6156712926e2fdfe#egg=zarr
 -e git+https://github.com/funkelab/daisy.git@0.3-dev#egg=daisy
 -e git+https://github.com/funkelab/funlib.learn.tensorflow.git@master#egg=funlib.learn.tensorflow
+-e git+https://github.com/funkelab/funlib.learn.torch.git@master#egg=funlib.learn.torch
 -e git+https://github.com/funkelab/funlib.show.neuroglancer.git@master#egg=funlib.show.neuroglancer
 -e git+https://github.com/funkelab/funlib.math.git@master#egg=funlib.math
 -e git+https://github.com/funkey/gunpowder.git@v1.1-dev#egg=gunpowder
