@@ -44,6 +44,16 @@ class SynisterDB(object):
         # Extend if needed
         self.super_classes = ["NA", "HEMI"]
 
+    def get_synapse_by_position(self, db_name, x, y, z):
+        db = self.__get_db(db_name)
+        synapses = db["synapses"]
+
+        matching_synapses = synapses.find({"$and": [{"z": round(z)},{"y": round(y)}, {"x": round(x)}]})
+        synapse_documents = []
+        for synapse in matching_synapses:
+            synapse_documents.append(synapse)
+
+        return synapse_documents
 
     def create(self, db_name, overwrite=False):
         logger.info("Create new synister db {}".format(db_name))
