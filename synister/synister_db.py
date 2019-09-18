@@ -81,44 +81,8 @@ class SynisterDB(object):
         # Supers
         supers = db["supers"]
 
-
-    def __generate_synapse(self, x, y, z, synapse_id, skeleton_id, source_id):
-        synapse = deepcopy(self.synapse)
-        synapse["x"] = x
-        synapse["y"] = y
-        synapse["z"] = z
-        synapse["synapse_id"] = synapse_id
-        synapse["skeleton_id"] = skeleton_id
-        synapse["source_id"] = str(source_id).upper()
-        return synapse
-
-    def __generate_neuron(self, skeleton_id, super_id, nt_known):
-        neuron = deepcopy(self.neuron)
-        neuron["skeleton_id"] = skeleton_id
-        neuron["super_id"] = str(super_id).upper()
-        if isinstance(nt_known, list):
-            neuron["nt_known"] = [str(nt).lower() for nt in nt_known]
-        else:
-            neuron["nt_known"] = [str(nt_known).lower()]
-        return neuron
-
-    def __generate_super(self, super_id, nt_guess):
-        """
-        A super is a superset of neurons and thus
-        includes, but is not limited to, hemilineages.
-        """
-
-        super_ = deepcopy(self.super)
-        super_["super_id"] = str(super_id)
-        if isinstance(nt_guess, list):
-            super_["nt_guess"] = [str(nt).lower() for nt in nt_guess]
-        else:
-            super_["nt_guess"] = [str(nt_guess).lower()]
-
-        return super_
-
     def add_synapse(self, db_name, x, y, z, synapse_id, skeleton_id,
-                    nt_known, source_id, nt_guess=None, super_id=None, mode="unique"):
+                    nt_known, source_id, nt_guess=None, super_id=None):
         """
         Add a new synapse to the database. This entails generating 
         or adding a synapse, a neuron and optionally a super
@@ -129,26 +93,6 @@ class SynisterDB(object):
         method, i.e. supers and neuron transmitter ids 
         have to be consistent before adding a new
         synapse.
-        """
-
-        modes = ["unique", "overwrite"]
-
-        if not mode in modes:
-            raise ValueError("Mode has to be one of {}".format(modes))
-
-        """
-        A duplicate is a synapse with matching synapse id.
-
-        unique: Fail upon insert of duplicate synapse 
-        that doesn't match records. If records match
-        the synapse is skipped.
-
-        overwrite: Overwrite records of duplicate
-        synapses.
-
-        Does not affect supers and neurons. All added 
-        synapses must be consistent with already present 
-        supers or must have a different i.e. new super/skeleton_id.
         """
 
         if not isinstance(synapse_id, int):
@@ -176,7 +120,7 @@ class SynisterDB(object):
         if not isinstance(db_name, str):
             raise ValueError("db_name must be str")
 
-        logger.info("Add synapse in DB {} in {} mode...".format(db_name, mode))
+        logger.info("Add synapse in DB {}".format(db_name))
 
         db = self.__get_db(db_name)
 
@@ -208,22 +152,12 @@ class SynisterDB(object):
                 skeleton_id_to_add = synapse_entry["skeleton_id"]
                 source_id_to_add = synapse_entry["source_id"]
 
-                if mode == "unique": 
-                    assert(x_known_in_db == x_to_add)
-                    assert(y_known_in_db == y_to_add)
-                    assert(z_known_in_db == z_to_add)
-                    assert(skeleton_id_in_db == skeleton_id_to_add)
-                    assert(source_id_in_db == source_id_to_add)
+                assert(x_known_in_db == x_to_add)
+                assert(y_known_in_db == y_to_add)
+                assert(z_known_in_db == z_to_add)
+                assert(skeleton_id_in_db == skeleton_id_to_add)
+                assert(source_id_in_db == source_id_to_add)
 
-                else: # mode == overwrite
-                    synapses.update_one({"synapse_id": synapse_id}, 
-                                        {"$set": [{"x": x_to_add}, 
-                                                  {"y": y_to_add}, 
-                                                  {"z": z_to_add},
-                                                  {"skeleton_id": skeleton_id_to_add},
-                                                  {"source_id": source_id_to_add}
-                                                 ]
-                                        })
         else: # count == 0
             synapses.insert_one(synapse_entry)
 
@@ -268,6 +202,42 @@ class SynisterDB(object):
             else: # count == 0
                 supers.insert_one(super_entry)
 
+    def update_synapse(self, synapse_id, 
+                       db_name, x=None, 
+                       y=None, z=None,
+                       skeleton_id=None, 
+                       source_id=None):
+
+        db = self.__get_db(db_name)
+        synapses = db["synapses"]
+
+        synapses.update_one({"synapse_id": synapse_id}, 
+                {"$set": [{arg: locals()[arg]} for arg in\
+                          ("x", "y", "z", "skeleton_id", "source_id")\
+                          if not locals()[arg] is None]})
+
+    def update_neuron(self, skeleton_id, 
+                      db_name, super_id=None, 
+                      nt_known=None):
+
+        db = self.__get_db(db_name)
+        neurons = db["neurons"]
+
+        neurons.update_one({"skeleton_id": skeleton_id}, 
+                {"$set": [{arg: locals()[arg]} for arg in\
+                          ("super_id", "nt_known")\
+                          if not locals()[arg] is None]})
+
+    def update_super(self, super_id, 
+                     db_name, nt_guess=None):
+
+        db = self.__get_db(db_name)
+        supers = db["supers"]
+
+        supers.update_one({"skeleton_id": skeleton_id}, 
+                {"$set": [{arg: locals()[arg]} for arg in\
+                          ("nt_guess")\
+                          if not locals()[arg] is None]})
 
     def __get_client(self):
         client = MongoClient(self.auth_string, connect=False)
@@ -276,33 +246,39 @@ class SynisterDB(object):
     def __get_db(self, db_name):
         client = self.__get_client()
         db = client[db_name]
-        return db
+        return db 
 
-    def __get_collection(self, db_name, collection, overwrite=False):
-        logger.info("Get client...")
-        client = self.get_client()
+    def __generate_synapse(self, x, y, z, synapse_id, skeleton_id, source_id):
+        synapse = deepcopy(self.synapse)
+        synapse["x"] = x
+        synapse["y"] = y
+        synapse["z"] = z
+        synapse["synapse_id"] = synapse_id
+        synapse["skeleton_id"] = skeleton_id
+        synapse["source_id"] = str(source_id).upper()
+        return synapse
 
-        db = self.get_db(db_name)
-        collections = db.collection_names()
-
-        if collection in collections:
-            if overwrite:
-                logger.info("Warning, overwrite collection {}...".format(collection))
-                self.create_collection(name_db=db_name,
-                                       collection=collection,
-                                       overwrite=True)
-
-                # Check that collection is empty after overwrite:
-                assert(db[collection].find({}).count() == 0)
-
-            else:
-                logger.info("Collection already exists, request {}.{}...".format(db_name, collection))
+    def __generate_neuron(self, skeleton_id, super_id, nt_known):
+        neuron = deepcopy(self.neuron)
+        neuron["skeleton_id"] = skeleton_id
+        neuron["super_id"] = str(super_id).upper()
+        if isinstance(nt_known, list):
+            neuron["nt_known"] = [str(nt).lower() for nt in nt_known]
         else:
-            logger.info("Collection does not exist, create...")
-            self.create_collection(name_db=db_name,
-                                   collection=collection,
-                                   overwrite=False)
+            neuron["nt_known"] = [str(nt_known).lower()]
+        return neuron
 
-        collection_handle = db[collection]
+    def __generate_super(self, super_id, nt_guess):
+        """
+        A super is a superset of neurons and thus
+        includes, but is not limited to, hemilineages.
+        """
 
-        return collection_handle
+        super_ = deepcopy(self.super)
+        super_["super_id"] = str(super_id)
+        if isinstance(nt_guess, list):
+            super_["nt_guess"] = [str(nt).lower() for nt in nt_guess]
+        else:
+            super_["nt_guess"] = [str(nt_guess).lower()]
+
+        return super_
