@@ -41,9 +41,6 @@ class SynisterDB(object):
                       "nt_guess": None}
 
 
-        # Extend if needed
-        self.super_classes = ["NA", "HEMI"]
-
     def get_synapse_by_position(self, db_name, x, y, z):
         db = self.__get_db(db_name)
         synapses = db["synapses"]
@@ -54,6 +51,24 @@ class SynisterDB(object):
             synapse_documents.append(synapse)
 
         return synapse_documents
+
+    def get_collection(self, db_name, collection_name):
+        db = self.__get_db(db_name)
+        collection = db[collection_name]
+
+        collection_iterator = collection.find({})
+        collection_documents = [c for c in collection_iterator]
+        return collection_documents
+
+    def get_neurotransmitters(self, db_name):
+        neurons = self.get_collection(db_name, "neurons")
+        supers = self.get_collection(db_name, "supers")
+
+        nt_known = set([nt for n in neurons for nt in n["nt_known"]])
+        nt_guess = set([nt for s in supers for nt in s["nt_guess"]])
+
+        return nt_known, nt_guess
+
 
     def create(self, db_name, overwrite=False):
         logger.info("Create new synister db {}".format(db_name))
@@ -162,11 +177,14 @@ class SynisterDB(object):
                 skeleton_id_to_add = synapse_entry["skeleton_id"]
                 source_id_to_add = synapse_entry["source_id"]
 
-                assert(x_known_in_db == x_to_add)
-                assert(y_known_in_db == y_to_add)
-                assert(z_known_in_db == z_to_add)
-                assert(skeleton_id_in_db == skeleton_id_to_add)
-                assert(source_id_in_db == source_id_to_add)
+                if x_known_in_db != x_to_add:
+                    raise ValueError("Synapse {} already in db but new x position does not match".format(synapse_id))
+                if y_known_in_db != y_to_add:
+                    raise ValueError("Synapse {} already in db but new y position does not match".format(synapse_id))
+                if z_known_in_db != z_to_add:
+                    raise ValueError("Synapse {} already in db but new z position does not match".format(synapse_id))
+                if skeleton_id_in_db != skeleton_id_to_add:
+                    raise ValueError("synapse {} already in db but assigned to a different skeleton".format(synapse_id))
 
         else: # count == 0
             synapses.insert_one(synapse_entry)
@@ -184,10 +202,13 @@ class SynisterDB(object):
                 super_id_in_db = doc["super_id"]
 
                 nt_known_to_add = set(neuron_entry["nt_known"])
-                super_id_to_add = neuron_entry["super_id"]
+                super_id_to_add = neuron_entry["super_id"][0]
+                
+                if nt_known_in_db != nt_known_to_add:
+                    raise ValueError("neuron {} already in db but has different known neurotransmitters".format(skeleton_id))
 
-                assert(nt_known_in_db == nt_known_to_add)
-                assert(super_id_in_db == super_id_to_add)
+                if super_id_in_db != super_id_to_add:
+                    raise ValueError("neuron {} already in db but assigned to a different super".format(skeleton_id))
 
         else: # count == 0
             neurons.insert_one(neuron_entry)
@@ -207,7 +228,9 @@ class SynisterDB(object):
                     nt_guess_in_db = set(doc["nt_guess"])
                     nt_guess_to_add = set(doc["nt_guess"])
 
-                    assert(nt_guess_in_db == nt_guess_to_add)
+                    if nt_guess_in_db != nt_guess_to_add:
+                        raise ValueError("super {} already in db but has different neurotransmitter guess".format(super_id))
+ 
 
             else: # count == 0
                 supers.insert_one(super_entry)
@@ -225,6 +248,90 @@ class SynisterDB(object):
                 {"$set": [{arg: locals()[arg]} for arg in\
                           ("x", "y", "z", "skeleton_id", "source_id")\
                           if not locals()[arg] is None]})
+
+    def get_synapses_by_nt(self, 
+                           db_name,
+                           neurotransmitters):
+
+        db = self.__get_db(db_name)
+        synapses = db["synapses"]
+
+        neurons = self.get_collection(db_name, "neurons")
+        synapses = self.get_collection(db_name, "synapses")
+
+        nt_to_synapses = {tuple(nt): [] for nt in neurotransmitters}
+        for nt in neurotransmitters:
+            neurons_with_nt = [neuron for neuron in neurons if set(neuron["nt_known"])==set(nt)]
+            if not neurons_with_nt:
+                raise ValueError("No neuron with nt {} in database {}".format(nt, database))
+
+            for neuron in neurons_with_nt:
+                synapses_with_nt = [synapse for synapse in synapses if synapse["skeleton_id"] == neuron["skeleton_id"]]
+                nt_to_synapses[tuple(nt)].extend(synapses_with_nt)
+
+        return nt_to_synapses
+
+
+    def make_split(self,
+                   db_name,
+                   split_name,
+                   train_synapse_ids,
+                   test_synapse_ids):
+
+        
+        db = self.__get_db(db_name)
+        synapses = db["synapses"]
+
+        synapses.update_many({"synapse_id": {"$in": train_synapse_ids}},
+                             {"$set": {split_name: "train"}})
+
+        synapses.update_many({"synapse_id": {"$in": test_synapse_ids}},
+                             {"$set": {split_name: "test"}})
+
+
+    def read_split(self, 
+                   db_name,
+                   split_name):
+
+        db = self.__get_db(db_name)
+        synapses = self.get_collection(db_name, "synapses")
+
+        train_synapses = []
+        test_synapses = []
+        for synapse in synapses:
+            try:
+                if synapse[split_name] == "train":
+                    train_synapses.append(synapse)
+                elif synapse[split_name] == "test":
+                    test_synapses.append(synapse)
+                else:
+                    raise ValueError("Split {} corrupted, abort".format(split_name))
+            except KeyError:
+                pass
+
+        return train_synapses, test_synapses
+
+
+    def get_synapse_locations(self, db_name, split_name, split, neurotransmitter):
+        if not split in ["train", "test"]:
+            raise ValueError("Split must be either train or test")
+
+        nts = self.get_neurotransmitters(self, db_name)
+        if not neurotransmitter in nts:
+            raise ValueError("{} not in database.".format(neurotransmitter))
+
+        train_synapses, test_synapses = self.read_split(db_name, split_name)
+       
+        if split == "train":
+            synapses = train_synapses
+        else:
+            synapses = test_synapses
+
+        if not isinstance(neurotransmitter, list):
+            neurotransmitter = list(neurotransmitter)
+        locations = [[int(s["z"]), int(s["y"]), int(s["z"])] for s in synapses if set(s["nt_known"]) == set(neurotransmitter)]
+        return locations
+
 
     def update_neuron(self, skeleton_id, 
                       db_name, super_id=None, 
