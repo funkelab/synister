@@ -8,10 +8,10 @@ import numpy as np
 import os
 import sys
 from funlib.learn.torch.models import Vgg3D
+from synister.gp.synapse import SynapseSourceMongo, SynapseTypeSource, InspectLabels
 
 torch.backends.cudnn.enabled = False
 
-data_dir = '../../01_data/v2'
 synapse_types = [
     'gaba',
     'acetylcholine',
@@ -26,58 +26,10 @@ fmaps = 32
 num_levels = 4
 batch_size = 8
 
-
-
-class SynapseSource(CsvPointsSource):
-
-    def _read_points(self):
-
-        print("Reading %s" % self.filename)
-        self.data = np.array(json.load(open(self.filename, 'r')))
-        self.ndims = 3
-        print("data: ", self.data.shape)
-
-
-class SynapseTypeSource(BatchProvider):
-
-    def __init__(self, synapse_types, synapse_type, array):
-
-        n = len(synapse_types)
-        i = synapse_types.index(synapse_type)
-
-        self.label = np.int64(i)
-        self.array = array
-
-    def setup(self):
-
-        spec = ArraySpec(
-            nonspatial=True,
-            dtype=np.int64)
-        self.provides(self.array, spec)
-
-    def provide(self, request):
-
-        batch = Batch()
-
-        spec = self.spec[self.array]
-        batch.arrays[self.array] = Array(
-            self.label,
-            spec)
-
-        return batch
-
-
-class InspectLabels(BatchFilter):
-
-    def __init__(self, synapse_type, pred_synapse_type):
-        self.synapse_type = synapse_type
-        self.pred_synapse_type = pred_synapse_type
-
-    def process(self, batch, request):
-        print("label     :", batch[self.synapse_type].data)
-        print("prediction:", batch[self.pred_synapse_type].data)
-
-def train_until(max_iteration):
+def train_until(max_iteration,
+                db_credentials,
+                db_name,
+                split_name):
 
     model = Vgg3D.Vgg3D(input_size=input_shape, fmaps=fmaps)
     loss = torch.nn.CrossEntropyLoss()
@@ -111,9 +63,11 @@ def train_until(max_iteration):
     sample_sources = tuple(
         (
             fafb_source,
-            SynapseSource(
-                os.path.join(data_dir, t + '_train.json'),
-                synapses),
+            SynapseSourceMongo(
+                db_credentials,
+                db_name,
+                split_name,
+                t),
             SynapseTypeSource(synapse_types, t, synapse_type)
         ) +
         MergeProvider() +
