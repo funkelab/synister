@@ -6,9 +6,8 @@ import configparser
 import click
 
 p = configargparse.ArgParser()
-p.add('-d', '--base_dir', required=False, 
-      help='base directory for storing micron experiments, defaults to ``~/micron_experiments``', 
-      default='~/micron_experiments')
+p.add('-d', '--base_dir', required=True, 
+      help='base directory for storing synister experiments')
 p.add('-e', required=True, help='name of the experiment, e.g. fafb')
 p.add('-t', required=True, help='train number/id for this particular run')
 p.add('-c', required=False, action='store_true', help='clean up - remove specified train setup')
