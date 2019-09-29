@@ -64,8 +64,15 @@ class SynisterDB(object):
         neurons = self.get_collection(db_name, "neurons")
         supers = self.get_collection(db_name, "supers")
 
-        nt_known = set([nt for n in neurons for nt in n["nt_known"]])
-        nt_guess = set([nt for s in supers for nt in s["nt_guess"]])
+        nt_known = []
+        for n in neurons:
+            nts = tuple([nt for nt in n["nt_known"]])
+            nt_known.append(nts)
+
+        nt_guess = []
+        for s in supers:
+            nts = tuple([nt for nt in s["nt_guess"]])
+            nt_guess.append(nts)
 
         return nt_known, nt_guess
 
@@ -253,17 +260,25 @@ class SynisterDB(object):
                            db_name,
                            neurotransmitters):
 
+        """
+        neurotransmitters: list of tuples
+        """
+
+        assert(isinstance(neurotransmitters, list))
+        for nt in neurotransmitters:
+            assert(isinstance(nt, tuple))
+
         db = self.__get_db(db_name)
         synapses = db["synapses"]
 
         neurons = self.get_collection(db_name, "neurons")
         synapses = self.get_collection(db_name, "synapses")
 
-        nt_to_synapses = {tuple(nt): [] for nt in neurotransmitters}
+        nt_to_synapses = {nt: [] for nt in neurotransmitters}
         for nt in neurotransmitters:
             neurons_with_nt = [neuron for neuron in neurons if set(neuron["nt_known"])==set(nt)]
             if not neurons_with_nt:
-                raise ValueError("No neuron with nt {} in database {}".format(nt, database))
+                raise ValueError("No neuron with nt {} in database {}".format(nt, db_name))
 
             for neuron in neurons_with_nt:
                 synapses_with_nt = [synapse for synapse in synapses if synapse["skeleton_id"] == neuron["skeleton_id"]]
@@ -313,23 +328,36 @@ class SynisterDB(object):
 
 
     def get_synapse_locations(self, db_name, split_name, split, neurotransmitter):
+        """
+        neurotransmitter: tuple
+        """
+        assert(isinstance(neurotransmitter, tuple))
+
         if not split in ["train", "test"]:
             raise ValueError("Split must be either train or test")
 
-        nts = self.get_neurotransmitters(self, db_name)
+        nt_known, nt_guess = self.get_neurotransmitters(db_name)
+        nts = nt_known
         if not neurotransmitter in nts:
             raise ValueError("{} not in database.".format(neurotransmitter))
 
-        train_synapses, test_synapses = self.read_split(db_name, split_name)
-       
-        if split == "train":
-            synapses = train_synapses
-        else:
-            synapses = test_synapses
+        synapses = self.get_synapses_by_nt(db_name,
+                                           [neurotransmitter])
+        
+        locations = []
+        for synapse in synapses[neurotransmitter]:
+            in_split = False
+            try:
+                in_split = (synapse[split_name] == split)
+            except:
+                pass
 
-        if not isinstance(neurotransmitter, list):
-            neurotransmitter = list(neurotransmitter)
-        locations = [[int(s["z"]), int(s["y"]), int(s["z"])] for s in synapses if set(s["nt_known"]) == set(neurotransmitter)]
+            if in_split:
+                location = [int(synapse["z"]), 
+                            int(synapse["y"]), 
+                            int(synapse["x"])]
+                locations.append(location)
+       
         return locations
 
 

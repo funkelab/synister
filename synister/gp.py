@@ -1,5 +1,6 @@
 from gunpowder import *
 from synister.synister_db import SynisterDB
+import numpy as np
 
 class SynapseSourceCsv(CsvPointsSource):
 
@@ -12,24 +13,32 @@ class SynapseSourceCsv(CsvPointsSource):
 
 
 class SynapseSourceMongo(CsvPointsSource):
-    def __init__(self, db_credentials, db_name, split_name, synapse_type, points_spec=None, scale=None):
+    def __init__(self, db_credentials, 
+                       db_name, 
+                       split_name, 
+                       synapse_type, 
+                       points,
+                       points_spec=None, 
+                       scale=None):
+
         self.db = SynisterDB(db_credentials)
         self.split_name = split_name
         self.db_name = db_name
+        self.synapse_type = synapse_type
         super(SynapseSourceMongo, self).__init__(filename=None,
                                                  points=points,
-                                                 points_spec=spoints_spec,
+                                                 points_spec=points_spec,
                                                  scale=scale)
 
-        def _read_points(self):
-            print("Reading split {} from db {}".format(split_name, db_name))
-            points = np.array(self.db.get_synapse_locations(self.db_name,
-                                                            self.split_name,
-                                                            "train",
-                                                            synapse_type), dtype=np.float32)
+    def _read_points(self):
+        print("Reading split {} from db {}".format(self.split_name, self.db_name))
+        points = np.array(self.db.get_synapse_locations(self.db_name,
+                                                        self.split_name,
+                                                        "train",
+                                                        self.synapse_type), dtype=np.float32)
 
-            self.data = points
-            self.ndims = 3
+        self.data = points
+        self.ndims = 3
 
 
 class SynapseTypeSource(BatchProvider):

@@ -1,138 +1,31 @@
-from gunpowder import *
-from gunpowder.ext import torch
-from gunpowder.torch import *
-import json
-import logging
-import math
-import numpy as np
 import os
+from subprocess import check_call
+from funlib.run import run, run_singularity
+import logging
+from synister.read_config import read_worker_config
 import sys
-from funlib.learn.torch.models import Vgg3D
-from synister.gp.synapse import SynapseSourceMongo, SynapseTypeSource, InspectLabels
 
-torch.backends.cudnn.enabled = False
+iteration = int(sys.argv[1])
+worker_config = read_worker_config("worker_config.ini")
 
-synapse_types = [
-    'gaba',
-    'acetylcholine',
-    'glutamate',
-    'serotonin',
-    'octopamine',
-    'dopamine'
-]
+base_cmd = "python {} {}".format("train_pipeline.py", iteration)
+					  
+if worker_config["singularity_container"] != "None" and worker_config["queue"] == "None":
+    run_singularity(base_cmd,
+                    singularity_image=worker_config["singularity_container"],
+                    mount_dirs=worker_config["mount_dirs"],
+                    execute=True)
 
-input_shape = Coordinate((32, 128, 128))
-fmaps = 32
-num_levels = 4
-batch_size = 8
+elif worker_config["queue"] != "None":
+    run(base_cmd,
+        singularity_image=worker_config["singularity_container"],
+        mount_dirs=worker_config["mount_dirs"],
+        queue=worker_config["queue"],
+        num_cpus=worker_config["num_cpus"],
+        num_gpus=1,
+        batch=False,
+        execute=True)
 
-def train_until(max_iteration,
-                db_credentials,
-                db_name,
-                split_name):
-
-    model = Vgg3D.Vgg3D(input_size=input_shape, fmaps=fmaps)
-    loss = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(
-        model.parameters(),
-        lr=1e-4)
-
-    raw = ArrayKey('RAW')
-    synapses = PointsKey('SYNAPSES')
-    synapse_type = ArrayKey('SYNAPSE_TYPE')
-    pred_synapse_type = ArrayKey('PRED_SYNAPSE_TYPE')
-
-    voxel_size = Coordinate((40, 4, 4))
-    input_size = input_shape*voxel_size
-
-    request = BatchRequest()
-    request.add(raw, input_size)
-    request.add(synapses, input_size/8)
-    request[synapse_type] = ArraySpec(nonspatial=True)
-    request[pred_synapse_type] = ArraySpec(nonspatial=True)
-
-    fafb_source = (
-        ZarrSource(
-            '/nrs/saalfeld/FAFB00/v14_align_tps_20170818_dmg.n5',
-            datasets={raw: 'volumes/raw/s0'},
-            array_specs={raw: ArraySpec(interpolatable=True)}) +
-        Normalize(raw) +
-        Pad(raw, None)
-    )
-
-    sample_sources = tuple(
-        (
-            fafb_source,
-            SynapseSourceMongo(
-                db_credentials,
-                db_name,
-                split_name,
-                t),
-            SynapseTypeSource(synapse_types, t, synapse_type)
-        ) +
-        MergeProvider() +
-        RandomLocation(ensure_nonempty=synapses)
-
-        for t in synapse_types
-    )
-
-    pipeline = (
-        sample_sources +
-        RandomProvider() +
-        ElasticAugment(
-            control_point_spacing=[4,40,40],
-            jitter_sigma=[0,2,2],
-            rotation_interval=[0,math.pi/2.0],
-            prob_slip=0.05,
-            prob_shift=0.05,
-            max_misalign=10,
-            subsample=8) +
-        SimpleAugment(transpose_only=[1, 2]) +
-        IntensityAugment(raw, 0.9, 1.1, -0.1, 0.1, z_section_wise=True) +
-        IntensityScaleShift(raw, 2,-1) +
-        PreCache(
-            cache_size=40,
-            num_workers=10) +
-        Stack(batch_size) +
-        Train(
-            model,
-            loss=loss,
-            optimizer=optimizer,
-            inputs={
-                'raw': raw
-            },
-            target=synapse_type,
-            output=pred_synapse_type,
-            array_specs={
-                pred_synapse_type: ArraySpec(nonspatial=True)
-            },
-            save_every=1000,
-            log_dir='log') +
-        InspectLabels(
-            synapse_type,
-            pred_synapse_type) +
-        IntensityScaleShift(raw, 0.5, 0.5) +
-        Snapshot({
-                raw: 'volumes/raw',
-                synapse_type: 'synapse_type',
-                pred_synapse_type: 'pred_synapse_type'
-            },
-            every=100,
-            output_filename='batch_{iteration}.hdf') +
-        PrintProfilingStats(every=10)
-    )
-
-    print("Starting training...")
-    with build(pipeline) as p:
-        while True:
-            batch = p.request_batch(request)
-            if batch.iteration >= max_iteration:
-                break
-    print("Training finished")
-
-if __name__ == "__main__":
-
-    logging.basicConfig(level=logging.INFO)
-
-    iteration = int(sys.argv[1])
-    train_until(iteration)
+else:
+    assert(worker_config["singularity_container"] == "None")
+    check_call(base_cmd, shell=True)
