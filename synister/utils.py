@@ -1,8 +1,36 @@
 import daisy
 import numpy as np
+import torch.nn.functional as F
+import torch
+from funlib.learn.torch.models import Vgg3D
 import logging
 
 logger = logging.getLogger(__name__)
+
+def predict(raw_batched,
+            model):
+
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    raw_batched_tensor = torch.tensor(raw_batched, device=device)
+    output = model(raw=raw_batched_tensor)
+    output = F.softmax(output, dim=1)
+    return output
+
+
+def init_vgg(checkpoint_file,
+             input_shape,
+             fmaps,
+             downsample_factors=[(2,2,2), (2,2,2), (2,2,2), (2,2,2)]):
+
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = Vgg3D(input_size=input_shape, fmaps=fmaps,
+                  downsample_factors=downsample_factors)
+    model.to(device)
+    logger.info("Init vgg with checkpoint {}".format(checkpoint_file))
+    checkpoint = torch.load(checkpoint_file)
+    model.load_state_dict(checkpoint['model_state_dict'])
+    return model
+
 
 def get_raw(locs,
             size,
@@ -43,6 +71,7 @@ def get_raw(locs,
                             data_set)
 
     for loc in locs:
+        loc = daisy.Coordinate(tuple(loc))
         offset_nm = loc - (size/2*voxel_size)
         roi = daisy.Roi(offset_nm, size_nm).snap_to_grid(voxel_size, mode='closest')
 

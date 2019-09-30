@@ -40,6 +40,8 @@ class SynisterDB(object):
         self.super = {"super_id": None,
                       "nt_guess": None}
 
+        self.prediction = {"synapse_id": None,
+                           "prediction": None}
 
     def get_synapse_by_position(self, db_name, x, y, z):
         db = self.__get_db(db_name)
@@ -49,8 +51,57 @@ class SynisterDB(object):
         synapse_documents = []
         for synapse in matching_synapses:
             synapse_documents.append(synapse)
+        
+        if len(synapse_documents) > 1:
+            raise ValueError("Database compromised, two synapses with position ({}, {}, {}) in {}".format(x, y, z, db_name))
 
-        return synapse_documents
+        return synapse_documents[0]
+
+
+    def write_prediction(self, 
+                         db_name,
+                         split_name,
+                         prediction,
+                         experiment,
+                         train_number,
+                         predict_number,
+                         x,
+                         y,
+                         z):
+
+
+        db = self.__get_db(db_name + "_predictions")
+        predictions = db["{}_{}_t{}_p{}".format(split_name, 
+                                                experiment,
+                                                train_number,
+                                                predict_number)]
+
+        # Existence check:
+        if len(predictions.find({})) == 0:
+            train_synapses, test_synapses = self.read_split(db_name,
+                                                            split_name)
+
+            prediction_documents = []
+            for synapse in test_synapse:
+                prediction_document = deepcopy(self.prediction)
+                prediction_document["synapse_id"] = synapse["synapse_id"]
+                prediction_documents.append(prediction_document)
+
+            predictions.insert_many(prediction_documents)
+
+
+        # Update prediction:
+        synapse_in_db = self.get_synapse_by_position(db_name,
+                                                     x,
+                                                     y,
+                                                     z)
+
+        result = predictions.update_one({"synapse_id": synapse_in_db["synapse_id"]},
+                                        {"$set": [{"prediction": np.array(prediction)}]})
+
+        if not (result.matched_count == 1):
+            raise ValueError("Prediction failed to update, none or multiple matching synapses in split {}".format(split_name))
+    
 
     def get_collection(self, db_name, collection_name):
         db = self.__get_db(db_name)

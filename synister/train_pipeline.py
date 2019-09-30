@@ -20,12 +20,24 @@ def train_until(max_iteration,
                 synapse_types,
                 input_shape,
                 fmaps,
-                num_levels,
-                batch_size):
+                downsample_factors,
+                batch_size,
+                voxel_size,
+                raw_container,
+                raw_dataset):
+
+    if not (len(synapse_types) == 6):
+        #TODO: Make output dimensions of VGG dynamic
+        raise Warning("Synapse types does not contain 6 classes. This may be inconsistent with your network setup.")
 
     input_shape = Coordinate(input_shape)
 
-    model = Vgg3D(input_size=input_shape, fmaps=fmaps)
+    model = Vgg3D(input_size=input_shape, 
+                  fmaps=fmaps, 
+                  downsample_factors=downsample_factors)
+
+    model.train()
+
     loss = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(
         model.parameters(),
@@ -36,7 +48,7 @@ def train_until(max_iteration,
     synapse_type = ArrayKey('SYNAPSE_TYPE')
     pred_synapse_type = ArrayKey('PRED_SYNAPSE_TYPE')
 
-    voxel_size = Coordinate((40, 4, 4))
+    voxel_size = Coordinate(tuple(voxel_size))
     input_size = input_shape*voxel_size
 
     request = BatchRequest()
@@ -47,8 +59,8 @@ def train_until(max_iteration,
 
     fafb_source = (
         ZarrSource(
-            '/nrs/saalfeld/FAFB00/v14_align_tps_20170818_dmg.n5',
-            datasets={raw: 'volumes/raw/s0'},
+            raw_container,
+            datasets={raw: raw_dataset},
             array_specs={raw: ArraySpec(interpolatable=True)}) +
         Normalize(raw) +
         Pad(raw, None)

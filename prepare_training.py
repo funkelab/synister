@@ -98,12 +98,15 @@ def create_train_config():
     config.set('Training', 'synapse_types', synapse_types_string)
     config.set('Training', 'input_shape', '32, 128, 128')
     config.set('Training', 'fmaps', '32')
-    config.set('Training', 'num_levels', '4')
     config.set('Training', 'batch_size', '8')
     config.set('Training', 'db_credentials', str(None))
     config.set('Training', 'db_name_data', str(None))
     config.set('Training', 'split_name', str(None))
-
+    config.set('Training', 'voxel_size', "40, 4, 4")
+    config.set('Training', 'raw_container', "/nrs/saalfeld/FAFB00/v14_align_tps_20170818_dmg.n5")
+    config.set('Training', 'raw_dataset', "volumes/raw/s0")
+    config.set('Training', 'downsample_factors', "(2,2,2), (2,2,2), (2,2,2), (2,2,2)")
+ 
     return config
 
 

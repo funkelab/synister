@@ -3,6 +3,36 @@ import os
 import numpy as np
 import json
 
+
+def read_predict_config(predict_config):
+    config = configparser.ConfigParser()
+    config.read(predict_config)
+
+    cfg_dict = {}
+    cfg_dict["synapse_types"] = [s for s in config.get("Predict", "synapse_types").split(", ")]
+    cfg_dict["input_shape"] = tuple([int(c) for c in config.get("Predict", "input_shape").split(", ")])
+    cfg_dict["fmaps"] = config.getint("Predict", "fmaps")
+    cfg_dict["batch_size"] = config.getint("Predict", "batch_size")
+    cfg_dict["db_credentials"] = config.get("Predict", "db_credentials")
+    cfg_dict["db_name_data"] = config.get("Predict", "db_name_data")
+    cfg_dict["split_name"] = config.get("Predict", "split_name")
+    cfg_dict["voxel_size"] = tuple([int(v) for v in config.get("Predict", "voxel_size").split(", ")])
+    cfg_dict["raw_container"] = config.get("Predict", "raw_container")
+    cfg_dict["raw_dataset"] = config.get("Predict", "raw_dataset")
+    cfg_dict["train_checkpoint"] = config.get("Predict", "train_checkpoint")
+    cfg_dict["experiment"] = config.get("Predict", "experiment")
+    cfg_dict["train_number"] = config.getint("Predict", "train_number")
+    cfg_dict["predict_number"] = config.getint("Predict", "predict_number")
+    downsample_factors = config.get("Predict", "downsample_factors")
+    downsample_factors = [s.strip("(").strip(")").split(",") for s in downsample_factors.split("), ")]
+    cfg_dict["downsample_factors"] = []
+    for factor in downsample_factors:
+        f = tuple([int(k) for k in factor])
+        cfg_dict["downsample_factors"].append(f)
+
+    return cfg_dict
+
+
 def read_train_config(train_config):
     config = configparser.ConfigParser()
     config.read(train_config)
@@ -10,12 +40,21 @@ def read_train_config(train_config):
     cfg_dict = {}
     cfg_dict["synapse_types"] = [s for s in config.get("Training", "synapse_types").split(", ")]
     cfg_dict["input_shape"] = tuple([int(c) for c in config.get("Training", "input_shape").split(", ")])
-    cfg_dict["num_levels"] = config.getint("Training", "num_levels")
     cfg_dict["fmaps"] = config.getint("Training", "fmaps")
     cfg_dict["batch_size"] = config.getint("Training", "batch_size")
     cfg_dict["db_credentials"] = config.get("Training", "db_credentials")
     cfg_dict["db_name_data"] = config.get("Training", "db_name_data")
     cfg_dict["split_name"] = config.get("Training", "split_name")
+    cfg_dict["voxel_size"] = tuple([int(v) for v in config.get("Training", "voxel_size").split(", ")])
+    cfg_dict["raw_container"] = config.get("Training", "raw_container")
+    cfg_dict["raw_dataset"] = config.get("Training", "raw_dataset")
+
+    downsample_factors = config.get("Training", "downsample_factors")
+    downsample_factors = [s.strip("(").strip(")").split(",") for s in downsample_factors.split("), ")]
+    cfg_dict["downsample_factors"] = []
+    for factor in downsample_factors:
+        f = tuple([int(k) for k in factor])
+        cfg_dict["downsample_factors"].append(f)
 
     return cfg_dict
 
