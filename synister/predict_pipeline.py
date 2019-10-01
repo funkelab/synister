@@ -37,6 +37,12 @@ def test(train_checkpoint,
 
     logger.info('Load test sample locations from db {} and split {}...'.format(db_name_data, split_name))
     db = SynisterDB(db_credentials)
+    
+    db.initialize_prediction(db_name_data,
+                             split_name,
+                             experiment,
+                             train_number,
+                             predict_number)
 
     logger.info('Start prediction...')
     predictions = []
@@ -68,12 +74,7 @@ def test(train_checkpoint,
                                 "y": loc_k_list[1],
                                 "x": loc_k_list[2]}
 
-                predictions.append(data_synapse)
-
-
-    logger.info('Write predictions to database...')
-    for data_synapse in predictions:
-        db.write_prediction(db_name_data,
+                db.write_prediction(db_name_data,
                             split_name,
                             data_synapse["prediction"],
                             experiment,
@@ -82,6 +83,8 @@ def test(train_checkpoint,
                             data_synapse["x"],
                             data_synapse["y"],
                             data_synapse["z"])
+
+                predictions.append(data_synapse)
 
 
 if __name__ == "__main__":

@@ -2,6 +2,7 @@ from pymongo import MongoClient, IndexModel, ASCENDING
 from configparser import ConfigParser
 from copy import deepcopy
 import logging
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +59,35 @@ class SynisterDB(object):
         return synapse_documents[0]
 
 
+    def initialize_prediction(self, 
+                              db_name,
+                              split_name,
+                              experiment,
+                              train_number,
+                              predict_number):
+
+        db = self.__get_db(db_name + "_predictions")
+        predictions = db["{}_{}_t{}_p{}".format(split_name, 
+                                                experiment,
+                                                train_number,
+                                                predict_number)]
+
+        # Existence check:
+        if predictions.find({}).count() > 0:
+            db.drop_collection(predictions)
+        
+        train_synapses, test_synapses = self.read_split(db_name,
+                                                        split_name)
+
+        prediction_documents = []
+        for synapse in test_synapses:
+            prediction_document = deepcopy(self.prediction)
+            prediction_document["synapse_id"] = synapse["synapse_id"]
+            prediction_documents.append(prediction_document)
+
+        predictions.insert_many(prediction_documents)
+
+
     def write_prediction(self, 
                          db_name,
                          split_name,
@@ -76,20 +106,6 @@ class SynisterDB(object):
                                                 train_number,
                                                 predict_number)]
 
-        # Existence check:
-        if len(predictions.find({})) == 0:
-            train_synapses, test_synapses = self.read_split(db_name,
-                                                            split_name)
-
-            prediction_documents = []
-            for synapse in test_synapse:
-                prediction_document = deepcopy(self.prediction)
-                prediction_document["synapse_id"] = synapse["synapse_id"]
-                prediction_documents.append(prediction_document)
-
-            predictions.insert_many(prediction_documents)
-
-
         # Update prediction:
         synapse_in_db = self.get_synapse_by_position(db_name,
                                                      x,
@@ -97,7 +113,7 @@ class SynisterDB(object):
                                                      z)
 
         result = predictions.update_one({"synapse_id": synapse_in_db["synapse_id"]},
-                                        {"$set": [{"prediction": np.array(prediction)}]})
+                                        {"$set": {"prediction": list(prediction)}})
 
         if not (result.matched_count == 1):
             raise ValueError("Prediction failed to update, none or multiple matching synapses in split {}".format(split_name))
