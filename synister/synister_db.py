@@ -354,6 +354,69 @@ class SynisterDB(object):
         return nt_to_synapses
 
 
+    def get_synapse(self, 
+                    db_name,
+                    synapse_id):
+
+        db = self.__get_db(db_name)
+
+        synapses = db["synapses"]
+        matching_synapses = synapses.find({"synapse_id": synapse_id})
+        synapse_documents = []
+        for synapse_doc in matching_synapses:
+            synapse_documents.append(synapse_doc)
+
+        if len(synapse_documents) > 1:
+            raise ValueError("Found more than one synapses with id {}, abort.".format(synapse_id))
+        elif len(synapse_documents) == 0:
+            raise ValueError("No synapse with id {} in db {}".format(synapse_id, db_name))
+
+        synapse = synapse_documents[0]
+
+        neurons = db["neurons"]
+        matching_neurons = neurons.find({"skeleton_id": synapse["skeleton_id"]})
+        neuron_documents = []
+        for neuron_doc in matching_neurons:
+            neuron_documents.append(neuron_doc)
+
+        if len(neuron_documents) > 1:
+            raise ValueError("Found more than one neuron with skid {} for synapse {}".format(synapse["skeleton_id"], 
+                                                                                             synapse["synapse_id"]))
+        elif len(neuron_documents) == 0:
+            raise ValueError("No neuron with skid {} in db {}".format(synapse["skeleton_id"],
+                                                                      synapse["db_name"]))
+        neuron = neuron_documents[0]
+
+
+        if neuron["super_id"] != ["NONE"]:
+            supers = db["supers"]
+            matching_supers = supers.find({"super_id": neuron["super_id"]})
+            super_documents = []
+            for super_doc in matching_supers:
+                super_documents.append(super_doc)
+
+            if len(super_documents) > 1:
+                raise ValueError("Found more than one super with super_id {} for synapse {}".format(neuron["super_id"], 
+                                                                                                    synapse["synapse_id"]))
+            elif len(super_documents) == 0:
+                raise ValueError("No super with super_id {} in db {}".format(neuron["super_id"],
+                                                                             synapse["db_name"]))
+            super_ = super_documents[0]
+
+        else:
+            super_ = {"super_id": "NONE",
+                      "nt_guess": ["NONE"]}
+
+        synapse = {**synapse, **neuron, **super_}
+
+        return synapse
+
+
+        
+
+
+
+
     def make_split(self,
                    db_name,
                    split_name,
