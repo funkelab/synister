@@ -88,6 +88,25 @@ class SynisterDB(object):
         predictions.insert_many(prediction_documents)
 
 
+    def count_predictions(self,
+                          db_name,
+                          split_name,
+                          experiment,
+                          train_number,
+                          predict_number):
+
+        db = self.__get_db(db_name + "_predictions")
+        predictions = db["{}_{}_t{}_p{}".format(split_name, 
+                                                experiment,
+                                                train_number,
+                                                predict_number)]
+
+        total = predictions.find({}).count()
+        done = predictions.find({"prediction": {"$ne": None}}).count()
+
+        return done, total
+
+
     def write_prediction(self, 
                          db_name,
                          split_name,
@@ -276,13 +295,13 @@ class SynisterDB(object):
                 super_id_in_db = doc["super_id"]
 
                 nt_known_to_add = set(neuron_entry["nt_known"])
-                super_id_to_add = neuron_entry["super_id"][0]
+                super_id_to_add = neuron_entry["super_id"]
                 
                 if nt_known_in_db != nt_known_to_add:
                     raise ValueError("neuron {} already in db but has different known neurotransmitters".format(skeleton_id))
 
-                if super_id_in_db != super_id_to_add:
-                    raise ValueError("neuron {} already in db but assigned to a different super".format(skeleton_id))
+                if set(super_id_in_db) != set(super_id_to_add):
+                    raise ValueError("neuron {} already in db but assigned to a different super {} (new), {} (in db)".format(skeleton_id,super_id_to_add, super_id_in_db))
 
         else: # count == 0
             neurons.insert_one(neuron_entry)
@@ -411,12 +430,8 @@ class SynisterDB(object):
 
         return synapse
 
-
-        
-
-
-
-
+    
+    
     def make_split(self,
                    db_name,
                    split_name,
@@ -536,7 +551,7 @@ class SynisterDB(object):
     def __generate_neuron(self, skeleton_id, super_id, nt_known):
         neuron = deepcopy(self.neuron)
         neuron["skeleton_id"] = skeleton_id
-        neuron["super_id"] = str(super_id).upper()
+        neuron["super_id"] = [str(super_id).upper()]
         if isinstance(nt_known, list):
             neuron["nt_known"] = [str(nt).lower() for nt in nt_known]
         else:
