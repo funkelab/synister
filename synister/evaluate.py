@@ -20,21 +20,15 @@ def parse_prediction(db_credentials,
 
     synapses = {}
     predictions = db.get_collection(db_name, collection_name)
+    synapses = db.get_collection(predict_cfg["db_name_data"], "synapses")
+    neurons = db.get_collection(predict_cfg["db_name_data"], "neurons")
 
-    n = 0
-    for prediction in predictions[:100]:
-        print("Parse prediction {}/{}".format(n+1, len(predictions)))
+    synapses = {synapse["synapse_id"]: synapse for synapse in synapses}
+    neurons = {neuron["skeleton_id"]: neuron for neuron in neurons}
 
-        synapse = db.get_synapse(predict_cfg["db_name_data"],
-                                 prediction["synapse_id"])
-
-        synapse["prediction"] = prediction["prediction"]
-        assert[synapse[predict_cfg["split_name"]] == "test"]
-        synapses[synapse["synapse_id"]] = synapse
-
-        n += 1
-
-    return synapses, predict_cfg
+    predicted_synapses = {prediction["synapse_id"]: {**{"prediction": prediction["prediction"]}, **synapses[prediction["synapse_id"]], **neurons[synapses[prediction["synapse_id"]]["skeleton_id"]]} for prediction in predictions}
+        
+    return predicted_synapses, predict_cfg
 
 
 def confusion_matrix(synapses, predict_config):
@@ -58,10 +52,6 @@ def confusion_matrix(synapses, predict_config):
         confusion_matrix[gt_class, predicted_class] += 1
         n += 1
 
-    # normalize:
-    #for gt_class in range(len(synapse_types)):
-    #    confusion_matrix[gt_class, :]/= np.sum(confusion_matrix[gt_class, :])
-
     return confusion_matrix
 
 
@@ -80,8 +70,8 @@ def plot_confusion_matrix(cm, synapse_types):
 if __name__ == "__main__":
     # synapses, predict_cfg = parse_prediction("/groups/funke/home/ecksteinn/Projects/synex/synister/db_credentials.ini",
     #                             "/groups/funke/home/ecksteinn/Projects/synex/synister_experiments/fafb/03_predict/setup_t2_p0/predict_config.ini")
-    synapses, predict_cfg = parse_prediction("/groups/funke/home/ecksteinn/Projects/synex/synister/db_credentials.ini",
-                                "/nrs/funke/ecksteinn/micron_experiments/test_experiments/02_predict/setup_t0_p0/predict_config.ini")
+    synapses, predict_cfg = parse_prediction_fast("/groups/funke/home/ecksteinn/Projects/synex/synister/db_credentials.ini",
+                                                  "/groups/funke/home/ecksteinn/Projects/synex/synister_experiments/fafb/03_predict/setup_t2_p0/predict_config.ini")
 
     confusion_matrix = confusion_matrix(synapses, predict_cfg)
     plot_confusion_matrix(confusion_matrix, predict_cfg["synapse_types"])
