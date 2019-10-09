@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sn
 import pandas as pd
-
+import statistics
 
 def parse_prediction(db_credentials,
                      predict_config_path):
@@ -22,7 +22,7 @@ def parse_prediction(db_credentials,
     predictions = db.get_collection(db_name, collection_name)
 
     n = 0
-    for prediction in predictions[:100]:
+    for prediction in predictions:
         print("Parse prediction {}/{}".format(n+1, len(predictions)))
 
         synapse = db.get_synapse(predict_cfg["db_name_data"],
@@ -77,11 +77,33 @@ def plot_confusion_matrix(cm, synapse_types):
     plt.xlabel("Predicted")
     plt.show()
 
+def accuracy(confusion_matrix):                         #returns a tuple (overall accuracy, average accuracy)
+    diagonal = np.diagonal(confusion_matrix)
+    correct = np.sum(diagonal)
+    total = np.sum(confusion_matrix)
+    overall_accuracy = correct/total
+
+    accuracies = []
+    n = 0
+    for synapse_type in confusion_matrix:
+        row_sum = np.sum(synapse_type)
+        accuracies.append(synapse_type[n]/row_sum)
+        n+=1
+
+    avg_accuracy = statistics.mean(accuracy)
+
+    return (overall_accuracy, avg_accuracy)
+
+
 if __name__ == "__main__":
-    # synapses, predict_cfg = parse_prediction("/groups/funke/home/ecksteinn/Projects/synex/synister/db_credentials.ini",
-    #                             "/groups/funke/home/ecksteinn/Projects/synex/synister_experiments/fafb/03_predict/setup_t2_p0/predict_config.ini")
     synapses, predict_cfg = parse_prediction("/groups/funke/home/ecksteinn/Projects/synex/synister/db_credentials.ini",
-                                "/nrs/funke/ecksteinn/micron_experiments/test_experiments/02_predict/setup_t0_p0/predict_config.ini")
+                                "/groups/funke/home/ecksteinn/Projects/synex/synister_experiments/fafb/03_predict/setup_t2_p0/predict_config.ini")
+    # synapses, predict_cfg = parse_prediction("/groups/funke/home/ecksteinn/Projects/synex/synister/db_credentials.ini",
+    #                             "/nrs/funke/ecksteinn/micron_experiments/test_experiments/02_predict/setup_t0_p0/predict_config.ini")
 
     confusion_matrix = confusion_matrix(synapses, predict_cfg)
-    plot_confusion_matrix(confusion_matrix, predict_cfg["synapse_types"])
+    print(confusion_matrix)
+    # plot_confusion_matrix(confusion_matrix, predict_cfg["synapse_types"])
+
+
+    print(accuracy(confusion_matrix))
