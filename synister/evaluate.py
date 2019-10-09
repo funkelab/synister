@@ -62,7 +62,19 @@ def plot_confusion_matrix(cm, synapse_types):
     ax = sn.heatmap(df_cm, annot=True)
     bottom, top = ax.get_ylim()
     ax.set_ylim(bottom+.5, top-.5)
-    plt.title("Confusion Matrix")
+    plt.ylabel("Actual")
+    plt.xlabel("Predicted")
+    plt.show()
+
+def plot_confusion_matrix_normalized(cm, synapse_types):
+    cm_row_sum = np.sum(cm, axis=1)
+    cm_normalized = (cm.transpose()/cm_row_sum).transpose()
+    df_cm = pd.DataFrame(cm_normalized, index = [i for i in synapse_types],
+                                columns = [i for i in synapse_types])
+    plt.figure(figsize = (10,10))
+    ax = sn.heatmap(df_cm, annot=True)
+    bottom, top = ax.get_ylim()
+    ax.set_ylim(bottom+.5, top-.5)
     plt.ylabel("Actual")
     plt.xlabel("Predicted")
     plt.show()
@@ -80,7 +92,7 @@ def accuracy(confusion_matrix):                         #returns a tuple (overal
         accuracies.append(synapse_type[n]/row_sum)
         n+=1
 
-    avg_accuracy = statistics.mean(accuracy)
+    avg_accuracy = statistics.mean(accuracies)
 
     return (overall_accuracy, avg_accuracy)
 
@@ -92,8 +104,7 @@ if __name__ == "__main__":
                                              "/groups/funke/home/ecksteinn/Projects/synex/synister_experiments/fafb/03_predict/setup_t2_p0/predict_config.ini")
 
     confusion_matrix = confusion_matrix(synapses, predict_cfg)
-    plot_confusion_matrix(confusion_matrix, predict_cfg["synapse_types"])
+    plot_confusion_matrix_normalized(confusion_matrix, predict_cfg["synapse_types"])
     # plot_confusion_matrix(confusion_matrix, predict_cfg["synapse_types"])
-
 
     print(accuracy(confusion_matrix))
