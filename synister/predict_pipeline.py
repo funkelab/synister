@@ -71,12 +71,12 @@ def test(worker_id,
                                                   tuple([synapse_type])))
 
 
-    loc_start = int(float(worker_id)/num_block_workers) * len(locations) 
-    loc_end = int(float(worker_id + 1)/num_block_workers) * len(locations)
+    loc_start = int(float(worker_id)/num_block_workers * len(locations)) 
+    loc_end = int(float(worker_id + 1)/num_block_workers * len(locations))
     my_locations = locations[loc_start:loc_end]
  
     for i in range(0, len(my_locations), batch_size):
-        logger.info('Predict location {}/{} ({})'.format(i, len(locations), synapse_type))
+        logger.info('Predict location {}/{}'.format(i, len(my_locations)))
         locs = my_locations[i:i+batch_size]
         raw, raw_normalized = get_raw(locs,
                                       input_shape,
