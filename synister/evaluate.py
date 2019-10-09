@@ -22,7 +22,7 @@ def parse_prediction(db_credentials,
     predictions = db.get_collection(db_name, collection_name)
 
     n = 0
-    for prediction in predictions:
+    for prediction in predictions[:100]:
         print("Parse prediction {}/{}".format(n+1, len(predictions)))
 
         synapse = db.get_synapse(predict_cfg["db_name_data"],
@@ -65,16 +65,23 @@ def confusion_matrix(synapses, predict_config):
     return confusion_matrix
 
 
-def plot_confusion_matrix(confusion_matrix, synapse_types):
-    df_cm = pd.DataFrame(confusion_matrix, index = [i for i in synapse_types],
+def plot_confusion_matrix(cm, synapse_types):
+    df_cm = pd.DataFrame(cm, index = [i for i in synapse_types],
                                 columns = [i for i in synapse_types])
-    plt.figure()
-    sn.heatmap(df_cm, annot=True)
+    plt.figure(figsize = (10,10))
+    ax = sn.heatmap(df_cm, annot=True)
+    bottom, top = ax.get_ylim()
+    ax.set_ylim(bottom+.5, top-.5)
+    plt.title("Confusion Matrix")
+    plt.ylabel("Actual")
+    plt.xlabel("Predicted")
     plt.show()
 
 if __name__ == "__main__":
+    # synapses, predict_cfg = parse_prediction("/groups/funke/home/ecksteinn/Projects/synex/synister/db_credentials.ini",
+    #                             "/groups/funke/home/ecksteinn/Projects/synex/synister_experiments/fafb/03_predict/setup_t2_p0/predict_config.ini")
     synapses, predict_cfg = parse_prediction("/groups/funke/home/ecksteinn/Projects/synex/synister/db_credentials.ini",
-                                "/groups/funke/home/ecksteinn/Projects/synex/synister_experiments/fafb/03_predict/setup_t2_p0/predict_config.ini")
+                                "/nrs/funke/ecksteinn/micron_experiments/test_experiments/02_predict/setup_t0_p0/predict_config.ini")
 
     confusion_matrix = confusion_matrix(synapses, predict_cfg)
     plot_confusion_matrix(confusion_matrix, predict_cfg["synapse_types"])
