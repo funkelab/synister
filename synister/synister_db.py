@@ -271,11 +271,23 @@ class SynisterDB(object):
                 source_id_to_add = synapse_entry["source_id"]
 
                 if x_known_in_db != x_to_add:
-                    raise ValueError("Synapse {} already in db but new x position does not match".format(synapse_id))
+                    if abs(x_known_in_db - x_to_add)<=19:
+                        print("Almost Match detected, allow...")
+                    else:
+                        raise ValueError("Synapse {} already in db but new x position does not match (db: {}, to add: {})".format(synapse_id, x_known_in_db, x_to_add))
+
                 if y_known_in_db != y_to_add:
-                    raise ValueError("Synapse {} already in db but new y position does not match".format(synapse_id))
+                    if abs(y_known_in_db - y_to_add)<=19:
+                        print("Almost Match detected, allow...")
+                    else:
+                        raise ValueError("Synapse {} already in db but new y position does not match (db: {}, to add: {})".format(synapse_id, y_known_in_db, y_to_add))
+
                 if z_known_in_db != z_to_add:
-                    raise ValueError("Synapse {} already in db but new z position does not match".format(synapse_id))
+                    if abs(z_known_in_db - z_to_add)<=19:
+                        print("Almost Match detected, allow...")
+                    else:
+                        raise ValueError("Synapse {} already in db but new z position does not match (db: {}, to add: {})".format(synapse_id, z_known_in_db, z_to_add))
+
                 if skeleton_id_in_db != skeleton_id_to_add:
                     raise ValueError("synapse {} already in db but assigned to a different skeleton".format(synapse_id))
 
@@ -298,10 +310,19 @@ class SynisterDB(object):
                 super_id_to_add = neuron_entry["super_id"]
                 
                 if nt_known_in_db != nt_known_to_add:
-                    raise ValueError("neuron {} already in db but has different known neurotransmitters".format(skeleton_id))
+                    if nt_known_to_add == set(['none']):
+                        pass
+                    elif nt_known_in_db == set(['none']):
+                        print("Update nt known")
+                        neurons.update_one({"skeleton_id": neuron_entry["skeleton_id"]}, {"$set": {"nt_known": neuron_entry["nt_known"]}})
+                    else:
+                        raise ValueError("neuron {} already in db but has different known neurotransmitters (db: {}, to add: {})".format(skeleton_id, nt_known_in_db, nt_known_to_add))
 
                 if set(super_id_in_db) != set(super_id_to_add):
-                    raise ValueError("neuron {} already in db but assigned to a different super {} (new), {} (in db)".format(skeleton_id,super_id_to_add, super_id_in_db))
+                    if not (set(super_id_to_add) == set(['NONE']) or "NA" in super_id_to_add[0]):
+                        raise ValueError("neuron {} already in db but assigned to a different super {} (new), {} (in db)".format(skeleton_id,super_id_to_add, super_id_in_db))
+                    else:
+                        print("Super id not known in new ({}) but known in db ({}), keep known".format(super_id_to_add, super_id_in_db))
 
         else: # count == 0
             neurons.insert_one(neuron_entry)
@@ -328,19 +349,6 @@ class SynisterDB(object):
             else: # count == 0
                 supers.insert_one(super_entry)
 
-    def update_synapse(self, synapse_id, 
-                       db_name, x=None, 
-                       y=None, z=None,
-                       skeleton_id=None, 
-                       source_id=None):
-
-        db = self.__get_db(db_name)
-        synapses = db["synapses"]
-
-        synapses.update_one({"synapse_id": synapse_id}, 
-                {"$set": [{arg: locals()[arg]} for arg in\
-                          ("x", "y", "z", "skeleton_id", "source_id")\
-                          if not locals()[arg] is None]})
 
     def get_synapses_by_nt(self, 
                            db_name,
@@ -505,29 +513,6 @@ class SynisterDB(object):
        
         return locations
 
-
-    def update_neuron(self, skeleton_id, 
-                      db_name, super_id=None, 
-                      nt_known=None):
-
-        db = self.__get_db(db_name)
-        neurons = db["neurons"]
-
-        neurons.update_one({"skeleton_id": skeleton_id}, 
-                {"$set": [{arg: locals()[arg]} for arg in\
-                          ("super_id", "nt_known")\
-                          if not locals()[arg] is None]})
-
-    def update_super(self, super_id, 
-                     db_name, nt_guess=None):
-
-        db = self.__get_db(db_name)
-        supers = db["supers"]
-
-        supers.update_one({"skeleton_id": skeleton_id}, 
-                {"$set": [{arg: locals()[arg]} for arg in\
-                          ("nt_guess")\
-                          if not locals()[arg] is None]})
 
     def __get_client(self):
         client = MongoClient(self.auth_string, connect=False)
