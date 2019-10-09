@@ -5,7 +5,10 @@ import numpy as np
 import vispy
 import plotly.io as pio
 import plotly
+import random
+from synister.synister_db import SynisterDB
 pio.renderers.default = "browser"
+
 
 
 class Catmaid(object):
@@ -35,7 +38,7 @@ class Catmaid(object):
 
         # Filter out trash (user id 55 is safe)
         volumes = volumes.loc[volumes['user_id']==55]
-        
+
         # Filter out v14 prefixes:
         volumes = volumes.loc[~volumes["name"].str.contains('14')]
 
@@ -47,14 +50,14 @@ class Catmaid(object):
     def get_volume(self, positions):
         """
         2D array: [[x, y, z], (...), ...]
-                                    in (Catmaid != FAFB) world 
+                                    in (Catmaid != FAFB) world
                                     coordinates.
 
-        returns: For each position a list of associated 
+        returns: For each position a list of associated
         brain regions.
         """
 
-        volumes = pymaid.in_volume(x=positions, 
+        volumes = pymaid.in_volume(x=positions,
                                    volume=self.volumes)
 
         return volumes
@@ -66,4 +69,17 @@ class Catmaid(object):
         """
         volumes = [pymaid.get_volume(v) for v in volumes]
         data = pymaid.plot3d(skeleton_ids + volumes, connectors=connectors, backend='plotly')
-        plotly.offline.plot(data) 
+        plotly.offline.plot(data)
+
+    def plot_split_by_neuron(self, db_credentials, db_name, split_name, neurotransmitter):
+        db = SynisterDB(db_credentials)
+        skids = set()
+
+        synapses = db.get_synapses_by_nt(db_name, [(neurotransmitter,)])[(neurotransmitter,)]
+        for synapse in synapses:
+            skid = synapse["skeleton_id"]
+            skids.add(skid)
+        skids = list(skids)
+        if len(skids) > 25:
+            skids = random.sample(skids, 25)
+        self.plot_neurons(skids)
