@@ -57,6 +57,8 @@ class Catmaid(object):
         volumes = pymaid.in_volume(x=positions, 
                                    volume=self.volumes)
 
+        return volumes
+
 
     def plot_neurons(self, skeleton_ids, volumes=[], connectors=True):
         """
