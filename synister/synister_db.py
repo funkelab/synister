@@ -107,6 +107,62 @@ class SynisterDB(object):
         return done, total
 
 
+    def update_synapse(self, 
+                       db_name,
+                       synapse_id,
+                       key,
+                       value):
+
+        db = self.__get_db(db_name)
+        synapses = db["synapses"]
+        synapses.update_one({"synapse_id": synapse_id},
+                      {"$set": {key: value}})
+
+
+    def get_brain_regions(self,
+                          db_name):
+
+        synapses = self.get_collection(db_name, "synapses")
+        
+        stats = {"size": len(synapses)}
+        brain_regions = set([tuple(synapse["brain_region"]) for synapse in synapses])
+        stats["distinct_brain_regions"] = len(brain_regions)
+        brain_regions = {brain_region: 0 for brain_region in brain_regions}
+
+        for synapse in synapses:
+            brain_regions[tuple(synapse["brain_region"])] += 1
+
+        stats["brain_regions"] = brain_regions
+
+        return stats
+
+    def get_hemi_lineages(self,
+                          db_name):
+
+        synapses = self.get_collection(db_name, "synapses")
+        neurons = self.get_collection(db_name, "neurons")
+        neuron_dict = {neuron["skeleton_id"]: neuron for neuron in neurons}
+        supers = self.get_collection(db_name, "supers")
+        
+        stats = {"size": len(synapses)}
+        hemi_lineages = set([tuple(neuron["super_id"]) for neuron in neurons])
+        stats["distinct_hemi_lineages"] = len(hemi_lineages)
+        hemi_lineages_by_synapse = {tuple(hemi_lineage): 0 for hemi_lineage in hemi_lineages}
+        hemi_lineages_by_neuron = {tuple(hemi_lineage): 0 for hemi_lineage in hemi_lineages}
+
+
+        for synapse in synapses:
+            hemi_lineages_by_synapse[tuple(neuron_dict[synapse["skeleton_id"]]["super_id"])] += 1
+
+        for neuron in neurons:
+            hemi_lineages_by_neuron[tuple(neuron["super_id"])] += 1
+
+        stats["hemi_lineages_by_synapse"] = hemi_lineages_by_synapse
+        stats["hemi_lineages_by_neuron"] = hemi_lineages_by_neuron
+
+        return stats
+
+
     def write_prediction(self, 
                          db_name,
                          split_name,
