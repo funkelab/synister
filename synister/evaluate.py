@@ -126,9 +126,9 @@ def plot_accuracy(db_credentials, predict_path, train_numbers):
         plt.legend()
 
     f = open("t{}_highest_accuracies.txt".format(train_numbers),"w+")
-    f.write("(train_number, highest overall accuracy, highest average accuracy)")
+    f.write("(train_number, highest overall accuracy, highest average accuracy)\n")
     for setup in highest_accuracies:
-        f.write(setup)
+        f.write(str(setup)+"\n")
     f.close()
     plt.savefig("plot_accuracies_t{}".format(train_numbers))
     plt.show()
