@@ -5,6 +5,7 @@ import numpy as np
 import seaborn as sn
 import pandas as pd
 import statistics
+import os
 
 def parse_prediction(db_credentials,
                      predict_config_path):
@@ -65,6 +66,7 @@ def plot_confusion_matrix(cm, synapse_types):
     plt.ylabel("Actual")
     plt.xlabel("Predicted")
     plt.show()
+    print(confusion_matrix)
 
 def plot_confusion_matrix_normalized(cm, synapse_types):
     cm_row_sum = np.sum(cm, axis=1)
@@ -79,7 +81,7 @@ def plot_confusion_matrix_normalized(cm, synapse_types):
     plt.xlabel("Predicted")
     plt.show()
 
-def accuracy(confusion_matrix):                         #returns a tuple (overall accuracy, average accuracy)
+def find_accuracy(confusion_matrix):                         #returns a tuple (overall accuracy, average accuracy)
     diagonal = np.diagonal(confusion_matrix)
     correct = np.sum(diagonal)
     total = np.sum(confusion_matrix)
@@ -96,15 +98,28 @@ def accuracy(confusion_matrix):                         #returns a tuple (overal
 
     return (overall_accuracy, avg_accuracy)
 
+def plot_accuracy(db_credentials, predict_path, train_number):
+    setups = os.listdir(predict_path)
+    setups = [i for i in setups if i.startswith("setup_t{}".format(train_number))]
+    overall_accuracies = []
+    avg_accuracies = []
+    iterations = []
+    for i in setups:
+        predict_number = i[i.rindex("p")+1:]
+        synapses, predict_cfg = parse_prediction(db_credentials,
+                                                 predict_path+"setup_t{}_p{}/predict_config.ini".format(train_number, predict_number))
+        checkpoint = predict_cfg["train_checkpoint"]
+        iteration = checkpoint[checkpoint.rindex("_")+1:]
 
-if __name__ == "__main__":
-    # synapses, predict_cfg = parse_prediction("/groups/funke/home/ecksteinn/Projects/synex/synister/db_credentials.ini",
-    #                             "/groups/funke/home/ecksteinn/Projects/synex/synister_experiments/fafb/03_predict/setup_t2_p0/predict_config.ini")
-    synapses, predict_cfg = parse_prediction("/groups/funke/home/ecksteinn/Projects/synex/synister/db_credentials.ini",
-                                             "/groups/funke/home/ecksteinn/Projects/synex/synister_experiments/fafb/03_predict/setup_t2_p0/predict_config.ini")
+        cm = confusion_matrix(synapses, predict_cfg)
+        accuracy = find_accuracy(cm)
+        overall_accuracies.append(accuracy[0])
+        avg_accuracies.append(accuracy[1])
+        iterations.append(int(iteration)/1000)
 
-    confusion_matrix = confusion_matrix(synapses, predict_cfg)
-    plot_confusion_matrix_normalized(confusion_matrix, predict_cfg["synapse_types"])
-    # plot_confusion_matrix(confusion_matrix, predict_cfg["synapse_types"])
-
-    print(accuracy(confusion_matrix))
+    plt.figure()
+    plt.scatter(iterations, avg_accuracies, label="Average accuracy")
+    plt.scatter(iterations, overall_accuracies, label="Overall accuracy")
+    plt.legend()
+    plt.savefig("plot_accuracies_t{}".format(train_number))
+    plt.show()
