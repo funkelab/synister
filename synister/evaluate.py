@@ -119,7 +119,7 @@ def plot_accuracy(db_credentials, predict_path, train_numbers):
             avg_accuracies.append(accuracy[1])
             iterations.append(int(iteration)/1000)
 
-        highest_accuracies.append((train_number, max(overall_accuracies),max(average_accuracies)))
+        highest_accuracies.append((train_number, max(overall_accuracies),max(avg_accuracies)))
 
         plt.scatter(iterations, avg_accuracies, label="t{} average accuracy".format(train_number))
         plt.scatter(iterations, overall_accuracies, label="t{} overall accuracy".format(train_number))
