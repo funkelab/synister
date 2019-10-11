@@ -98,7 +98,7 @@ def find_accuracy(confusion_matrix):                         #returns a tuple (o
 
     return (overall_accuracy, avg_accuracy)
 
-def plot_accuracy(db_credentials, predict_paths, train_numbers):
+def plot_accuracy(db_credentials, predict_path, train_numbers):
     for train_number in train_numbers:
         setups = os.listdir(predict_path)
         setups = [i for i in setups if i.startswith("setup_t{}".format(train_number))]
