@@ -98,28 +98,28 @@ def find_accuracy(confusion_matrix):                         #returns a tuple (o
 
     return (overall_accuracy, avg_accuracy)
 
-def plot_accuracy(db_credentials, predict_path, train_number):
-    setups = os.listdir(predict_path)
-    setups = [i for i in setups if i.startswith("setup_t{}".format(train_number))]
-    overall_accuracies = []
-    avg_accuracies = []
-    iterations = []
-    for i in setups:
-        predict_number = i[i.rindex("p")+1:]
-        synapses, predict_cfg = parse_prediction(db_credentials,
-                                                 predict_path+"setup_t{}_p{}/predict_config.ini".format(train_number, predict_number))
-        checkpoint = predict_cfg["train_checkpoint"]
-        iteration = checkpoint[checkpoint.rindex("_")+1:]
+def plot_accuracy(db_credentials, predict_paths, train_numbers):
+    for train_number in train_numbers:
+        setups = os.listdir(predict_path)
+        setups = [i for i in setups if i.startswith("setup_t{}".format(train_number))]
+        overall_accuracies = []
+        avg_accuracies = []
+        iterations = []
+        for i in setups:
+            predict_number = i[i.rindex("p")+1:]
+            synapses, predict_cfg = parse_prediction(db_credentials,
+                                                     predict_path+"setup_t{}_p{}/predict_config.ini".format(train_number, predict_number))
+            checkpoint = predict_cfg["train_checkpoint"]
+            iteration = checkpoint[checkpoint.rindex("_")+1:]
 
-        cm = confusion_matrix(synapses, predict_cfg)
-        accuracy = find_accuracy(cm)
-        overall_accuracies.append(accuracy[0])
-        avg_accuracies.append(accuracy[1])
-        iterations.append(int(iteration)/1000)
+            cm = confusion_matrix(synapses, predict_cfg)
+            accuracy = find_accuracy(cm)
+            overall_accuracies.append(accuracy[0])
+            avg_accuracies.append(accuracy[1])
+            iterations.append(int(iteration)/1000)
 
-    plt.figure()
-    plt.scatter(iterations, avg_accuracies, label="Average accuracy")
-    plt.scatter(iterations, overall_accuracies, label="Overall accuracy")
-    plt.legend()
+        plt.scatter(iterations, avg_accuracies, label="{} average accuracy".format(train_number))
+        plt.scatter(iterations, overall_accuracies, label="{} overall accuracy".format(train_number))
+        plt.legend()
     plt.savefig("plot_accuracies_t{}".format(train_number))
     plt.show()
