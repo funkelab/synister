@@ -99,6 +99,7 @@ def find_accuracy(confusion_matrix):                         #returns a tuple (o
     return (overall_accuracy, avg_accuracy)
 
 def plot_accuracy(db_credentials, predict_path, train_numbers):
+    highest_accuracies = []
     for train_number in train_numbers:
         setups = os.listdir(predict_path)
         setups = [i for i in setups if i.startswith("setup_t{}".format(train_number))]
@@ -118,8 +119,16 @@ def plot_accuracy(db_credentials, predict_path, train_numbers):
             avg_accuracies.append(accuracy[1])
             iterations.append(int(iteration)/1000)
 
-        plt.scatter(iterations, avg_accuracies, label="{} average accuracy".format(train_number))
-        plt.scatter(iterations, overall_accuracies, label="{} overall accuracy".format(train_number))
+        highest_accuracies.append((train_number, max(overall_accuracies),max(average_accuracies)))
+
+        plt.scatter(iterations, avg_accuracies, label="t{} average accuracy".format(train_number))
+        plt.scatter(iterations, overall_accuracies, label="t{} overall accuracy".format(train_number))
         plt.legend()
-    plt.savefig("plot_accuracies_t{}".format(train_number))
+
+    f = open("t{}_highest_accuracies.txt".format(train_numbers),"w+")
+    f.write("(train_number, highest overall accuracy, highest average accuracy)")
+    for setup in highest_accuracies:
+        f.write(setup)
+    f.close()
+    plt.savefig("plot_accuracies_t{}".format(train_numbers))
     plt.show()
