@@ -60,8 +60,6 @@ class Catmaid(object):
         volumes = pymaid.in_volume(x=positions,
                                    volume=self.volumes)
 
-        return volumes
-
 
     def plot_neurons(self, skeleton_ids, volumes=[], connectors=True):
         """
@@ -69,7 +67,13 @@ class Catmaid(object):
         """
         volumes = [pymaid.get_volume(v) for v in volumes]
         data = pymaid.plot3d(skeleton_ids + volumes, connectors=connectors, backend='plotly')
-        plotly.offline.plot(data)
+        plotly.offline.plot(data, filename="plot_neurons", image="png")
+
+    def plot_brain_regions(self, test_brain_regions, train_brain_regions, connectors=True):
+        test_volumes = [pymaid.get_volume(v, color=(255,0,0,.2)) for v in test_brain_regions]           #test is red
+        train_volumes = [pymaid.get_volume(v, color=(0,255,0,.2)) for v in train_brain_regions]         #train is green
+        data = pymaid.plot3d(test_volumes + train_volumes + overlap_volumes, connectors=connectors, backend='plotly')
+        plotly.offline.plot(data, filename="plot_brain_regions_catmaid", image="png")
 
     def plot_split_by_neuron(self, db_credentials, db_name, split_name, neurotransmitter):
         db = SynisterDB(db_credentials)
