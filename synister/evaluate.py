@@ -68,7 +68,7 @@ def plot_confusion_matrix(cm, synapse_types):
     plt.show()
     print(confusion_matrix)
 
-def plot_confusion_matrix_normalized(cm, synapse_types):
+def plot_confusion_matrix_normalized(cm, synapse_types, predict_cfg):
     cm_row_sum = np.sum(cm, axis=1)
     cm_normalized = (cm.transpose()/cm_row_sum).transpose()
     df_cm = pd.DataFrame(cm_normalized, index = [i for i in synapse_types],
@@ -79,6 +79,11 @@ def plot_confusion_matrix_normalized(cm, synapse_types):
     ax.set_ylim(bottom+.5, top-.5)
     plt.ylabel("Actual")
     plt.xlabel("Predicted")
+    checkpoint = predict_cfg["train_checkpoint"]
+    iteration = checkpoint[checkpoint.rindex("_")+1:]
+    train_number = predict_cfg["train_number"]
+    plt.title("Normalized Confusion Matrix t{} i{}".format(train_number, iteration))
+    plt.savefig("normalized_confusion_matrix_t{}_i{}".format(train_number, iteration))
     plt.show()
 
 def find_accuracy(confusion_matrix):                         #returns a tuple (overall accuracy, average accuracy)
