@@ -108,11 +108,12 @@ def plot_accuracy(db_credentials, predict_path, train_numbers):
     for train_number in train_numbers:
         setups = os.listdir(predict_path)
         setups = [i for i in setups if i.startswith("setup_t{}".format(train_number))]
+        predict_numbers = [int(i[i.rindex("p")+1:]) for i in setups if i.startswith("setup_t{}".format(train_number))]
+        predict_numbers.sort()
         overall_accuracies = []
         avg_accuracies = []
         iterations = []
-        for i in setups:
-            predict_number = i[i.rindex("p")+1:]
+        for predict_number in predict_numbers:
             synapses, predict_cfg = parse_prediction(db_credentials,
                                                      predict_path+"setup_t{}_p{}/predict_config.ini".format(train_number, predict_number))
             checkpoint = predict_cfg["train_checkpoint"]
@@ -127,7 +128,9 @@ def plot_accuracy(db_credentials, predict_path, train_numbers):
         highest_accuracies.append((train_number, max(overall_accuracies),max(avg_accuracies)))
 
         plt.scatter(iterations, avg_accuracies, label="t{} average accuracy".format(train_number))
+        plt.plot(iterations, avg_accuracies)
         plt.scatter(iterations, overall_accuracies, label="t{} overall accuracy".format(train_number))
+        plt.plot(iterations, overall_accuracies)
         plt.legend()
 
     f = open("t{}_highest_accuracies.txt".format(train_numbers),"w+")
