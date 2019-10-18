@@ -5,6 +5,7 @@ import numpy as np
 import seaborn as sn
 import pandas as pd
 import statistics
+import os
 
 def parse_prediction(db_credentials,
                      predict_config_path):
@@ -65,8 +66,9 @@ def plot_confusion_matrix(cm, synapse_types):
     plt.ylabel("Actual")
     plt.xlabel("Predicted")
     plt.show()
+    print(confusion_matrix)
 
-def plot_confusion_matrix_normalized(cm, synapse_types):
+def plot_confusion_matrix_normalized(cm, synapse_types, predict_cfg):
     cm_row_sum = np.sum(cm, axis=1)
     cm_normalized = (cm.transpose()/cm_row_sum).transpose()
     df_cm = pd.DataFrame(cm_normalized, index = [i for i in synapse_types],
@@ -77,9 +79,14 @@ def plot_confusion_matrix_normalized(cm, synapse_types):
     ax.set_ylim(bottom+.5, top-.5)
     plt.ylabel("Actual")
     plt.xlabel("Predicted")
+    checkpoint = predict_cfg["train_checkpoint"]
+    iteration = checkpoint[checkpoint.rindex("_")+1:]
+    train_number = predict_cfg["train_number"]
+    plt.title("Normalized Confusion Matrix t{} i{}".format(train_number, iteration))
+    plt.savefig("normalized_confusion_matrix_t{}_i{}".format(train_number, iteration))
     plt.show()
 
-def accuracy(confusion_matrix):                         #returns a tuple (overall accuracy, average accuracy)
+def find_accuracy(confusion_matrix):                         #returns a tuple (overall accuracy, average accuracy)
     diagonal = np.diagonal(confusion_matrix)
     correct = np.sum(diagonal)
     total = np.sum(confusion_matrix)
@@ -96,15 +103,48 @@ def accuracy(confusion_matrix):                         #returns a tuple (overal
 
     return (overall_accuracy, avg_accuracy)
 
+def plot_accuracy(db_credentials, predict_path, train_numbers):
+    highest_accuracies = []
+    train_avg_accuracies = {}
+    for train_number in train_numbers:
+        setups = os.listdir(predict_path)
+        setups = [i for i in setups if i.startswith("setup_t{}".format(train_number))]
+        predict_numbers = [int(i[i.rindex("p")+1:]) for i in setups if i.startswith("setup_t{}".format(train_number))]
+        predict_numbers.sort()
+        overall_accuracies = []
+        avg_accuracies = []
+        iterations = []
+        for predict_number in predict_numbers:
+            synapses, predict_cfg = parse_prediction(db_credentials,
+                                                     predict_path+"setup_t{}_p{}/predict_config.ini".format(train_number, predict_number))
+            checkpoint = predict_cfg["train_checkpoint"]
+            iteration = checkpoint[checkpoint.rindex("_")+1:]
 
-if __name__ == "__main__":
-    # synapses, predict_cfg = parse_prediction("/groups/funke/home/ecksteinn/Projects/synex/synister/db_credentials.ini",
-    #                             "/groups/funke/home/ecksteinn/Projects/synex/synister_experiments/fafb/03_predict/setup_t2_p0/predict_config.ini")
-    synapses, predict_cfg = parse_prediction("/groups/funke/home/ecksteinn/Projects/synex/synister/db_credentials.ini",
-                                             "/groups/funke/home/ecksteinn/Projects/synex/synister_experiments/fafb/03_predict/setup_t2_p0/predict_config.ini")
+            cm = confusion_matrix(synapses, predict_cfg)
+            accuracy = find_accuracy(cm)
+            overall_accuracies.append(accuracy[0])
+            avg_accuracies.append(accuracy[1])
+            iterations.append(int(iteration)/1000)
 
-    confusion_matrix = confusion_matrix(synapses, predict_cfg)
-    plot_confusion_matrix_normalized(confusion_matrix, predict_cfg["synapse_types"])
-    # plot_confusion_matrix(confusion_matrix, predict_cfg["synapse_types"])
+        highest_accuracies.append((train_number, max(overall_accuracies),max(avg_accuracies)))
+        train_avg_accuracies[train_number] = avg_accuracies
 
-    print(accuracy(confusion_matrix))
+        plt.scatter(iterations, overall_accuracies, label="t{} overall accuracy".format(train_number))
+        plt.plot(iterations, overall_accuracies)
+        plt.legend()
+
+    f = open("t{}_highest_accuracies.txt".format(train_numbers),"w+")
+    f.write("(train_number, highest overall accuracy, highest average accuracy)\n")
+    for setup in highest_accuracies:
+        f.write(str(setup)+"\n")
+    f.close()
+    plt.savefig("plot_overall_accuracies_t{}".format(train_numbers))
+    plt.show()
+
+    for train_number in train_numbers:
+        avg_accuracies = train_avg_accuracies[train_number]
+        plt.scatter(iterations, avg_accuracies, label="t{} average accuracy".format(train_number))
+        plt.plot(iterations, avg_accuracies)
+        plt.legend()
+    plt.savefig("plot_average_accuracies_t{}".format(train_numbers))
+    plt.show()
