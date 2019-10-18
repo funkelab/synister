@@ -119,6 +119,20 @@ class SynisterDB(object):
                       {"$set": {key: value}})
 
 
+    def remove_from_split(self,
+                          db_name,
+                          split_name,
+                          synapse_id):
+
+        db = self.__get_db(db_name)
+        synapses = db["synapses"]
+
+        synapses.update_one(
+          {"synapse_id": synapse_id},
+          {"$unset": {split_name:1}}
+          )
+
+
     def get_brain_regions(self,
                           db_name):
 
