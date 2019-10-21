@@ -2,13 +2,19 @@ from pymongo import MongoClient, IndexModel, ASCENDING
 from configparser import ConfigParser
 from copy import deepcopy
 import logging
-import numpy as np
+import time
 
 logger = logging.getLogger(__name__)
 
+unknown_hemi_lineage_names = [
+    'NA',
+    'NONE',
+    'NEW'
+] + ['UNKNOWN%d' % d for d in range(10)]
+
 
 class SynisterDB(object):
-    def __init__(self, credentials):
+    def __init__(self, credentials, db_name):
         with open(credentials) as fp:
             config = ConfigParser()
             config.readfp(fp)
@@ -44,8 +50,90 @@ class SynisterDB(object):
         self.prediction = {"synapse_id": None,
                            "prediction": None}
 
-    def get_synapse_by_position(self, db_name, x, y, z):
-        db = self.__get_db(db_name)
+        self.db_name = db_name
+
+    def get_neurons(self):
+
+        neurons = self.get_collection('neurons')
+        neurons = {
+            neuron['skeleton_id']: {
+                # TODO: remove [0] when DB updated to have only one super (->
+                # hemi_lineage)
+                'super_id': self.__consolidate_unknown(neuron['super_id'][0]),
+                'nt_known': tuple(sorted(neuron['nt_known']))
+            }
+            for neuron in neurons
+        }
+
+        return neurons
+
+    def get_synapses(self, skeleton_ids=None, neurotransmitters=None):
+        '''Get all the synapses in the DB.
+
+        Args:
+
+            skeleton_ids (list of int, optional):
+
+                Return only synapses for the given skeletons.
+
+            neurotransmitters (tuple of string, optional):
+
+                Return only synapses that have the given combination of
+                neurotransmitters.
+
+        Returns:
+
+            Dictionary from synapse ID to position (``x``, ``y``, ``z``),
+            skeleton (``skeleton_id``), and brain region (``brain_region``).
+        '''
+
+        db = self.__get_db()
+
+        if neurotransmitters is not None:
+
+            # get skeleton IDs for neurotransmitters
+            neuron_collection = db['neurons']
+            result = neuron_collection.find({
+                    'nt_known': tuple(sorted(neurotransmitters))
+                },
+                projection=['skeleton_id'])
+            nt_skeleton_ids = list(n['skeleton_id'] for n in result)
+
+            # intersect with skeleton_ids
+            if skeleton_ids is None:
+                skeleton_ids = nt_skeleton_ids
+            else:
+                skeleton_ids = list(set(skeleton_ids) & set(nt_skeleton_ids))
+
+        synapse_collection = db['synapses']
+
+        if skeleton_ids is None:
+            result = synapse_collection.find({})
+        else:
+            result = synapse_collection.find({'skeleton_id': {'$in': skeleton_ids}})
+
+        synapses = {
+            synapse['synapse_id']: {
+                k: synapse[k]
+                for k in [
+                    'x', 'y', 'z',
+                    'skeleton_id',
+                    'brain_region'
+                ]
+            }
+            for synapse in result
+        }
+
+        return synapses
+
+    def __consolidate_unknown(self, name):
+
+        if name in unknown_hemi_lineage_names:
+            return None
+        return name
+
+    def get_synapse_by_position(self, x, y, z):
+        db = self.__get_db()
         synapses = db["synapses"]
 
         matching_synapses = synapses.find({"$and": [{"z": round(z)},{"y": round(y)}, {"x": round(x)}]})
@@ -54,19 +142,21 @@ class SynisterDB(object):
             synapse_documents.append(synapse)
         
         if len(synapse_documents) > 1:
-            raise ValueError("Database compromised, two synapses with position ({}, {}, {}) in {}".format(x, y, z, db_name))
+            raise ValueError(
+                "Database compromised, two synapses with position "
+                "({}, {}, {}) in {}".format(
+                        x, y, z, self.db_name))
 
         return synapse_documents[0]
 
 
     def initialize_prediction(self, 
-                              db_name,
                               split_name,
                               experiment,
                               train_number,
                               predict_number):
 
-        db = self.__get_db(db_name + "_predictions")
+        db = self.__get_db(self.db_name + "_predictions")
         predictions = db["{}_{}_t{}_p{}".format(split_name, 
                                                 experiment,
                                                 train_number,
@@ -76,7 +166,7 @@ class SynisterDB(object):
         if predictions.find({}).count() > 0:
             db.drop_collection(predictions)
         
-        train_synapses, test_synapses = self.read_split(db_name,
+        train_synapses, test_synapses = self.read_split(self.db_name,
                                                         split_name)
 
         prediction_documents = []
@@ -89,13 +179,12 @@ class SynisterDB(object):
 
 
     def count_predictions(self,
-                          db_name,
                           split_name,
                           experiment,
                           train_number,
                           predict_number):
 
-        db = self.__get_db(db_name + "_predictions")
+        db = self.__get_db(self.db_name + "_predictions")
         predictions = db["{}_{}_t{}_p{}".format(split_name, 
                                                 experiment,
                                                 train_number,
@@ -108,23 +197,21 @@ class SynisterDB(object):
 
 
     def update_synapse(self, 
-                       db_name,
                        synapse_id,
                        key,
                        value):
 
-        db = self.__get_db(db_name)
+        db = self.__get_db()
         synapses = db["synapses"]
         synapses.update_one({"synapse_id": synapse_id},
                       {"$set": {key: value}})
 
 
     def remove_from_split(self,
-                          db_name,
                           split_name,
                           synapse_id):
 
-        db = self.__get_db(db_name)
+        db = self.__get_db()
         synapses = db["synapses"]
 
         synapses.update_one(
@@ -133,10 +220,9 @@ class SynisterDB(object):
           )
 
 
-    def get_brain_regions(self,
-                          db_name):
+    def get_brain_regions(self):
 
-        synapses = self.get_collection(db_name, "synapses")
+        synapses = self.get_collection("synapses")
         
         stats = {"size": len(synapses)}
         brain_regions = set([tuple(synapse["brain_region"]) for synapse in synapses])
@@ -150,35 +236,25 @@ class SynisterDB(object):
 
         return stats
 
-    def get_hemi_lineages(self,
-                          db_name):
+    def get_hemi_lineages(self):
+        '''Returns a list of all hemi-lineage names in the DB.'''
 
-        synapses = self.get_collection(db_name, "synapses")
-        neurons = self.get_collection(db_name, "neurons")
-        neuron_dict = {neuron["skeleton_id"]: neuron for neuron in neurons}
-        supers = self.get_collection(db_name, "supers")
-        
-        stats = {"size": len(synapses)}
-        hemi_lineages = set([tuple(neuron["super_id"]) for neuron in neurons])
-        stats["distinct_hemi_lineages"] = len(hemi_lineages)
-        hemi_lineages_by_synapse = {tuple(hemi_lineage): 0 for hemi_lineage in hemi_lineages}
-        hemi_lineages_by_neuron = {tuple(hemi_lineage): 0 for hemi_lineage in hemi_lineages}
+        neurons = self.get_neurons()
+        hemi_lineages = set(n['super_id'] for n in neurons.values())
+        if None in hemi_lineages:
+            hemi_lineages.remove(None)
+            has_unknown = True
+        else:
+            has_unknown = False
 
+        hemi_lineages = sorted(list(hemi_lineages))
 
-        for synapse in synapses:
-            hemi_lineages_by_synapse[tuple(neuron_dict[synapse["skeleton_id"]]["super_id"])] += 1
+        if has_unknown:
+            hemi_lineages.append(None)
 
-        for neuron in neurons:
-            hemi_lineages_by_neuron[tuple(neuron["super_id"])] += 1
-
-        stats["hemi_lineages_by_synapse"] = hemi_lineages_by_synapse
-        stats["hemi_lineages_by_neuron"] = hemi_lineages_by_neuron
-
-        return stats
-
+        return hemi_lineages
 
     def write_prediction(self, 
-                         db_name,
                          split_name,
                          prediction,
                          experiment,
@@ -189,14 +265,14 @@ class SynisterDB(object):
                          z):
 
 
-        db = self.__get_db(db_name + "_predictions")
+        db = self.__get_db(self.db_name + "_predictions")
         predictions = db["{}_{}_t{}_p{}".format(split_name, 
                                                 experiment,
                                                 train_number,
                                                 predict_number)]
 
         # Update prediction:
-        synapse_in_db = self.get_synapse_by_position(db_name,
+        synapse_in_db = self.get_synapse_by_position(self.db_name,
                                                      x,
                                                      y,
                                                      z)
@@ -208,17 +284,17 @@ class SynisterDB(object):
             raise ValueError("Prediction failed to update, none or multiple matching synapses in split {}".format(split_name))
     
 
-    def get_collection(self, db_name, collection_name):
-        db = self.__get_db(db_name)
+    def get_collection(self, collection_name):
+        db = self.__get_db()
         collection = db[collection_name]
 
         collection_iterator = collection.find({})
         collection_documents = [c for c in collection_iterator]
         return collection_documents
 
-    def get_neurotransmitters(self, db_name):
-        neurons = self.get_collection(db_name, "neurons")
-        supers = self.get_collection(db_name, "supers")
+    def get_neurotransmitters(self):
+        neurons = self.get_collection("neurons")
+        supers = self.get_collection("supers")
 
         nt_known = []
         for n in neurons:
@@ -233,13 +309,13 @@ class SynisterDB(object):
         return nt_known, nt_guess
 
 
-    def create(self, db_name, overwrite=False):
-        logger.info("Create new synister db {}".format(db_name))
-        db = self.__get_db(db_name)
+    def create(self, overwrite=False):
+        logger.info("Create new synister db {}".format(self.db_name))
+        db = self.__get_db()
 
         if overwrite:
             for collection in self.collections:
-                logger.info("Overwrite {}.{}...".format(db_name, collection))
+                logger.info("Overwrite {}.{}...".format(self.db_name, collection))
                 db.drop_collection(collection)
 
         # Synapses
@@ -269,7 +345,7 @@ class SynisterDB(object):
         # Supers
         supers = db["supers"]
 
-    def add_synapse(self, db_name, x, y, z, synapse_id, skeleton_id,
+    def add_synapse(self, x, y, z, synapse_id, skeleton_id,
                     nt_known, source_id, nt_guess=None, super_id=None):
         """
         Add a new synapse to the database. This entails generating 
@@ -305,12 +381,12 @@ class SynisterDB(object):
             raise ValueError("y must be integer")
         if not isinstance(z, int):
             raise ValueError("z must be integer")
-        if not isinstance(db_name, str):
+        if not isinstance(self.db_name, str):
             raise ValueError("db_name must be str")
 
-        logger.info("Add synapse in DB {}".format(db_name))
+        logger.info("Add synapse in DB {}".format(self.db_name))
 
-        db = self.__get_db(db_name)
+        db = self.__get_db()
 
         synapses_to_insert = []
         neurons_to_insert = []
@@ -420,42 +496,11 @@ class SynisterDB(object):
                 supers.insert_one(super_entry)
 
 
-    def get_synapses_by_nt(self, 
-                           db_name,
-                           neurotransmitters):
-
-        """
-        neurotransmitters: list of tuples
-        """
-
-        assert(isinstance(neurotransmitters, list))
-        for nt in neurotransmitters:
-            assert(isinstance(nt, tuple))
-
-        db = self.__get_db(db_name)
-        synapses = db["synapses"]
-
-        neurons = self.get_collection(db_name, "neurons")
-        synapses = self.get_collection(db_name, "synapses")
-
-        nt_to_synapses = {nt: [] for nt in neurotransmitters}
-        for nt in neurotransmitters:
-            neurons_with_nt = [neuron for neuron in neurons if set(neuron["nt_known"])==set(nt)]
-            if not neurons_with_nt:
-                raise ValueError("No neuron with nt {} in database {}".format(nt, db_name))
-
-            for neuron in neurons_with_nt:
-                synapses_with_nt = [synapse for synapse in synapses if synapse["skeleton_id"] == neuron["skeleton_id"]]
-                nt_to_synapses[tuple(nt)].extend(synapses_with_nt)
-
-        return nt_to_synapses
-
 
     def get_synapse(self, 
-                    db_name,
                     synapse_id):
 
-        db = self.__get_db(db_name)
+        db = self.__get_db()
 
         synapses = db["synapses"]
         matching_synapses = synapses.find({"synapse_id": synapse_id})
@@ -466,7 +511,8 @@ class SynisterDB(object):
         if len(synapse_documents) > 1:
             raise ValueError("Found more than one synapses with id {}, abort.".format(synapse_id))
         elif len(synapse_documents) == 0:
-            raise ValueError("No synapse with id {} in db {}".format(synapse_id, db_name))
+            raise ValueError(
+                "No synapse with id {} in db {}".format(synapse_id, self.db_name))
 
         synapse = synapse_documents[0]
 
@@ -480,8 +526,9 @@ class SynisterDB(object):
             raise ValueError("Found more than one neuron with skid {} for synapse {}".format(synapse["skeleton_id"], 
                                                                                              synapse["synapse_id"]))
         elif len(neuron_documents) == 0:
-            raise ValueError("No neuron with skid {} in db {}".format(synapse["skeleton_id"],
-                                                                      synapse["db_name"]))
+            raise ValueError(
+                "No neuron with skid {} in db {}".format(
+                    synapse["skeleton_id"], self.db_name))
         neuron = neuron_documents[0]
 
 
@@ -496,8 +543,9 @@ class SynisterDB(object):
                 raise ValueError("Found more than one super with super_id {} for synapse {}".format(neuron["super_id"], 
                                                                                                     synapse["synapse_id"]))
             elif len(super_documents) == 0:
-                raise ValueError("No super with super_id {} in db {}".format(neuron["super_id"],
-                                                                             synapse["db_name"]))
+                raise ValueError(
+                    "No super with super_id {} in db {}".format(
+                        neuron["super_id"], self.db_name))
             super_ = super_documents[0]
 
         else:
@@ -511,13 +559,12 @@ class SynisterDB(object):
     
     
     def make_split(self,
-                   db_name,
                    split_name,
                    train_synapse_ids,
                    test_synapse_ids):
 
         
-        db = self.__get_db(db_name)
+        db = self.__get_db()
         synapses = db["synapses"]
 
         synapses.update_many({"synapse_id": {"$in": train_synapse_ids}},
@@ -528,11 +575,10 @@ class SynisterDB(object):
 
 
     def read_split(self, 
-                   db_name,
                    split_name):
 
-        db = self.__get_db(db_name)
-        synapses = self.get_collection(db_name, "synapses")
+        db = self.__get_db()
+        synapses = self.get_collection("synapses")
 
         train_synapses = []
         test_synapses = []
@@ -550,7 +596,7 @@ class SynisterDB(object):
         return train_synapses, test_synapses
 
 
-    def get_synapse_locations(self, db_name, split_name, split, neurotransmitter):
+    def get_synapse_locations(self, split_name, split, neurotransmitter):
         """
         neurotransmitter: tuple
         """
@@ -559,12 +605,12 @@ class SynisterDB(object):
         if not split in ["train", "test"]:
             raise ValueError("Split must be either train or test")
 
-        nt_known, nt_guess = self.get_neurotransmitters(db_name)
+        nt_known, nt_guess = self.get_neurotransmitters(self.db_name)
         nts = nt_known
         if not neurotransmitter in nts:
             raise ValueError("{} not in database.".format(neurotransmitter))
 
-        synapses = self.get_synapses_by_nt(db_name,
+        synapses = self.get_synapses_by_nt(self.db_name,
                                            [neurotransmitter])
         
         locations = []
@@ -588,10 +634,12 @@ class SynisterDB(object):
         client = MongoClient(self.auth_string, connect=False)
         return client
 
-    def __get_db(self, db_name):
+    def __get_db(self, db_name=None):
+        if db_name is None:
+            db_name = self.db_name
         client = self.__get_client()
         db = client[db_name]
-        return db 
+        return db
 
     def __generate_synapse(self, x, y, z, synapse_id, skeleton_id, source_id):
         synapse = deepcopy(self.synapse)
