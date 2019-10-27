@@ -21,7 +21,7 @@ class SynisterDb(object):
     def __init__(self, credentials, db_name):
         with open(credentials) as fp:
             config = ConfigParser()
-            config.readfp(fp)
+            config.read_file(fp)
             self.credentials = {}
             self.credentials["user"] = config.get("Credentials", "user")
             self.credentials["password"] = config.get("Credentials", "password")
@@ -460,17 +460,17 @@ class SynisterDb(object):
                                                 predict_number)]
 
         # Existence check:
-        if predictions.find({}).count() > 0:
+        if predictions.count_documents({}) > 0:
             db.drop_collection(predictions)
 
         synapses_in_split = self.get_synapses(split_name=split_name)
 
         train_synapses = []
         test_synapses = []
-        for synapse_id, synapse in synapses_in_split:
-            if synapse["split"][split_name] == "train":
+        for synapse_id, synapse in synapses_in_split.items():
+            if synapse["splits"][split_name] == "train":
                 train_synapses.append(synapse_id)
-            elif synapse["split"][split_name] == "test":
+            elif synapse["splits"][split_name] == "test":
                 test_synapses.append(synapse_id)
             else:
                 raise ValueError("Split corrupted, abort")
@@ -534,7 +534,7 @@ class SynisterDb(object):
                    test_synapse_ids):
         
         db = self.__get_db()
-        splits = db["splits"]
+        synapses = db["synapses"]
 
         synapses.update_many({"synapse_id": {"$in": train_synapse_ids}},
                              {"$set": {"splits.{}".format(split_name): "train"}})

@@ -2,6 +2,7 @@ import unittest
 from synister.synister_db import SynisterDb
 import os
 from pymongo import MongoClient
+import numpy as np
 
 class DbSetupTestCase(unittest.TestCase):
     def setUp(self):
@@ -100,23 +101,120 @@ class GetHemiLineagesTestCase(DbSetupTestCase):
 
 class InitializePredictionsTestCase(DbSetupTestCase):
     def runTest(self):
-        """TODO"""
-        self.assertTrue(False)
+        self.db.initialize_prediction(split_name="neuron",
+                                      experiment="test",
+                                      train_number=0,
+                                      predict_number=0)
+
+        test_client = MongoClient(self.db.auth_string)
+        db = test_client[self.db.db_name + "_predictions"]
+        predict_collection = db["neuron_test_t0_p0"]
+
+        n_prediction = predict_collection.count_documents({})
+
+        synapses_in_split = self.db.get_synapses(split_name="neuron")
+        test_synapses_in_split = [s for s in synapses_in_split if synapses_in_split[s]["splits"]["neuron"]=="test"]
+        
+        self.assertTrue(len(test_synapses_in_split) == n_prediction)
 
 class WritePredictionsTestCase(DbSetupTestCase):
     def runTest(self):
-        """TODO"""
-        self.assertTrue(False)
+        self.db.initialize_prediction(split_name="neuron",
+                                      experiment="test",
+                                      train_number=0,
+                                      predict_number=0)
 
+        x = 434974
+        y = 246387
+        z = 62440
+        synapse_id = 53867344
+        prediction = [1.0,0.0,0.0,0.0,0.0,0.0] 
+
+        self.db.write_prediction(split_name="neuron",
+                                 prediction=prediction,
+                                 experiment="test",
+                                 train_number=0,
+                                 predict_number=0,
+                                 x=x, y=y, z=z)
+
+        test_client = MongoClient(self.db.auth_string)
+        db = test_client[self.db.db_name + "_predictions"]
+        predict_collection = db["neuron_test_t0_p0"]
+
+        updated_synapse = [doc for doc in predict_collection.find({"synapse_id": synapse_id})]
+        self.assertTrue(len(updated_synapse)==1)
+        self.assertTrue(np.all(np.array(updated_synapse[0]["prediction"]) == np.array(prediction)))
+
+        n_updated = [doc for doc in predict_collection.find({"prediction": {"$ne": None}})]
+        self.assertTrue(len(n_updated) == 1)
+        self.assertTrue(n_updated[0]["synapse_id"] == synapse_id)
+
+        self.db.initialize_prediction(split_name="neuron",
+                                      experiment="test",
+                                      train_number=0,
+                                      predict_number=0)
+
+        n_updated = [doc for doc in predict_collection.find({"prediction": {"$ne": None}})]
+        self.assertTrue(len(n_updated) == 0)
+ 
 class CountPredictionsTestCase(DbSetupTestCase):
     def runTest(self):
-        """TODO"""
-        self.assertTrue(False)
+        self.db.initialize_prediction(split_name="neuron",
+                                      experiment="test",
+                                      train_number=0,
+                                      predict_number=0)
+
+        x = 434974
+        y = 246387
+        z = 62440
+        synapse_id = 53867344
+        prediction = [1.0,0.0,0.0,0.0,0.0,0.0] 
+
+        self.db.write_prediction(split_name="neuron",
+                                 prediction=prediction,
+                                 experiment="test",
+                                 train_number=0,
+                                 predict_number=0,
+                                 x=x, y=y, z=z)
+
+        done, total = self.db.count_predictions(split_name="neuron",
+                                                experiment="test",
+                                                train_number=0,
+                                                predict_number=0)
+
+        test_client = MongoClient(self.db.auth_string)
+        db = test_client[self.db.db_name + "_predictions"]
+        predict_collection = db["neuron_test_t0_p0"]
+
+        n_not_updated = [doc for doc in predict_collection.find({"prediction": None})]
+ 
+        self.assertTrue(done == 1)
+        self.assertTrue(total == 1 + len(n_not_updated))
 
 class MakeSplitTestCase(DbSetupTestCase):
     def runTest(self):
-        """TODO"""
-        self.assertTrue(False)
+        train_synapse_ids = [999188, 97954] 
+        test_synapse_ids = [98300]
 
+        self.db.make_split(split_name="__test",
+                           train_synapse_ids=train_synapse_ids,
+                           test_synapse_ids=test_synapse_ids)
+
+
+        synapses_in_split = self.db.get_synapses(split_name="__test")
+        self.assertTrue(len(synapses_in_split) == 3)
+        synapse_ids = [s for s in synapses_in_split]
+        self.assertTrue(sorted(synapse_ids) == sorted(train_synapse_ids + test_synapse_ids))
+        self.assertTrue(np.all([synapses_in_split[s]["splits"]["__test"] == "train" for s in train_synapse_ids]))
+        self.assertTrue(np.all([synapses_in_split[s]["splits"]["__test"] == "test" for s in test_synapse_ids]))
+
+        # Clean up:
+        test_client = MongoClient(self.db.auth_string)
+        db = test_client[self.db.db_name]
+        synapse_collection = db["synapses"]
+        synapse_collection.update_many({"synapse_id": {"$in": train_synapse_ids + test_synapse_ids}},
+                                       {"$unset": {"splits.__test": ""}})
+
+     
 if __name__ == "__main__":
     unittest.main()
