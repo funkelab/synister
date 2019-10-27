@@ -439,7 +439,7 @@ class SynisterDb(object):
         
         hemi_lineages = {
                 hl["hemi_lineage_id"]: {
-                    "nt_guess": sorted(hl["nt_guess"]), 
+                    "nt_guess": tuple(sorted(hl["nt_guess"])), 
                     "hemi_lineage_name": self.__consolidate_unknown(hl["hemi_lineage_name"])
                 }
                 for hl in result
