@@ -123,9 +123,9 @@ class SynisterDb(object):
         return query
 
     def __get_positions_query(self, positions):
-        query = {"$or": [{"$and": [{"z": round(z)},
-                                   {"y": round(y)}, 
-                                   {"x": round(x)}]} for z,y,x in positions]}
+        query = {"$or": [{"$and": [{"z": int(round(z))},
+                                   {"y": int(round(y))}, 
+                                   {"x": int(round(x))}]} for z,y,x in positions]}
         return query
 
     def __get_synapse_ids_query(self, synapse_ids):
