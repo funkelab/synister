@@ -1,16 +1,6 @@
 from gunpowder import *
-from synister.synister_db import SynisterDB
+from synister.synister_db import SynisterDb
 import numpy as np
-
-class SynapseSourceCsv(CsvPointsSource):
-
-    def _read_points(self):
-
-        print("Reading %s" % self.filename)
-        self.data = np.array(json.load(open(self.filename, 'r')))
-        self.ndims = 3
-        print("data: ", self.data.shape)
-
 
 class SynapseSourceMongo(CsvPointsSource):
     def __init__(self, db_credentials, 
@@ -21,7 +11,7 @@ class SynapseSourceMongo(CsvPointsSource):
                        points_spec=None, 
                        scale=None):
 
-        self.db = SynisterDB(db_credentials)
+        self.db = SynisterDb(db_credentials, db_name)
         self.split_name = split_name
         self.db_name = db_name
         self.synapse_type = synapse_type
@@ -32,19 +22,25 @@ class SynapseSourceMongo(CsvPointsSource):
 
     def _read_points(self):
         print("Reading split {} from db {}".format(self.split_name, self.db_name))
-        points = np.array(self.db.get_synapse_locations(self.db_name,
-                                                        self.split_name,
-                                                        "train",
-                                                        self.synapse_type), dtype=np.float32)
+        synapses = self.db.get_synapses(neurotransmitters=self.synapse_type,
+                                        split_name=self.split_name)
+
+        points = np.array([
+                            [
+                                int(synapse["z"]),
+                                int(synapse["y"]),
+                                int(synapse["x"])
+                                
+                            ]
+                        for synapse in synapses.values()
+                        if synapse["splits"][self.split_name] == "train"
+                        ])
 
         self.data = points
         self.ndims = 3
 
-
 class SynapseTypeSource(BatchProvider):
-
     def __init__(self, synapse_types, synapse_type, array):
-
         n = len(synapse_types)
         i = synapse_types.index(synapse_type)
 
@@ -52,14 +48,12 @@ class SynapseTypeSource(BatchProvider):
         self.array = array
 
     def setup(self):
-
         spec = ArraySpec(
             nonspatial=True,
             dtype=np.int64)
         self.provides(self.array, spec)
 
     def provide(self, request):
-
         batch = Batch()
 
         spec = self.spec[self.array]
@@ -69,9 +63,7 @@ class SynapseTypeSource(BatchProvider):
 
         return batch
 
-
 class InspectLabels(BatchFilter):
-
     def __init__(self, synapse_type, pred_synapse_type):
         self.synapse_type = synapse_type
         self.pred_synapse_type = pred_synapse_type
