@@ -209,12 +209,7 @@ class MakeSplitTestCase(DbSetupTestCase):
         self.assertTrue(np.all([synapses_in_split[s]["splits"]["__test"] == "test" for s in test_synapse_ids]))
 
         # Clean up:
-        test_client = MongoClient(self.db.auth_string)
-        db = test_client[self.db.db_name]
-        synapse_collection = db["synapses"]
-        synapse_collection.update_many({"synapse_id": {"$in": train_synapse_ids + test_synapse_ids}},
-                                       {"$unset": {"splits.__test": ""}})
-
-     
+        self.db.remove_split(split_name="__test")
+         
 if __name__ == "__main__":
     unittest.main()
