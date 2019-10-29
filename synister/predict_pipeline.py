@@ -3,7 +3,7 @@ import json
 import numpy as np
 
 from synister.utils import init_vgg, predict, get_raw
-from synister.synister_db import SynisterDB
+from synister.synister_db import SynisterDb
 from synister.read_config import read_predict_config, read_worker_config
 
 import logging
@@ -42,7 +42,7 @@ def test(worker_id,
     model.eval()
 
     logger.info('Load test sample locations from db {} and split {}...'.format(db_name_data, split_name))
-    db = SynisterDB(db_credentials)
+    db = SynisterDb(db_credentials, db_name_data)
 
     logger.info('Initialize prediction writers...')
     prediction_queue = multiprocessing.JoinableQueue()
@@ -65,10 +65,16 @@ def test(worker_id,
     locations = []
     for synapse_type in synapse_types:
         logger.info('Predict synapse type {}...'.format(synapse_type))
-        locations.extend(db.get_synapse_locations(db_name_data,
-                                                  split_name,
-                                                  "test",
-                                                  tuple([synapse_type])))
+        synapses = db.get_synapses(split_name=split_name,
+                                   neurotransmitters=tuple(synapse_type,))
+
+        locations_for_type = [(int(synapse["z"]), 
+                               int(synapse["y"]),
+                               int(synapse["x"]))
+                               for synapse in synapses.values()
+                               if synapse["splits"][split_name]=="test"]
+
+        locations.extend(locations_for_type)
 
 
     loc_start = int(float(worker_id)/num_block_workers * len(locations)) 
@@ -110,13 +116,12 @@ def prediction_writer(prediction_queue,
                       predict_number):
 
 
-    db = SynisterDB(db_credentials)
+    db = SynisterDb(db_credentials, db_name_data)
     
     while True:
         data_synapse = prediction_queue.get()
 
-        db.write_prediction(db_name_data,
-                            split_name,
+        db.write_prediction(split_name,
                             data_synapse["prediction"],
                             experiment,
                             train_number,

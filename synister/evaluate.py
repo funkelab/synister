@@ -1,4 +1,4 @@
-from synister.synister_db import SynisterDB
+from synister.synister_db import SynisterDb
 from synister.read_config import read_predict_config
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,23 +11,31 @@ def parse_prediction(db_credentials,
                      predict_config_path):
 
     predict_cfg = read_predict_config(predict_config_path)
+    db = SynisterDb(db_credentials, predict_cfg["db_name_data"])
 
-    db = SynisterDB(db_credentials)
-    db_name = "{}_predictions".format(predict_cfg["db_name_data"])
-    collection_name = "{}_{}_t{}_p{}".format(predict_cfg["split_name"],
-                                             predict_cfg["experiment"],
-                                             predict_cfg["train_number"],
-                                             predict_cfg["predict_number"])
+    predictions = db.get_predictions(predict_cfg["split_name"],
+                                     predict_cfg["experiment"],
+                                     predict_cfg["train_number"],
+                                     predict_cfg["predict_number"])
+
+    synapses = db.get_synapses()
+    skeletons = db.get_skeletons()
 
     synapses = {}
-    predictions = db.get_collection(db_name, collection_name)
-    synapses = db.get_collection(predict_cfg["db_name_data"], "synapses")
-    neurons = db.get_collection(predict_cfg["db_name_data"], "neurons")
 
     synapses = {synapse["synapse_id"]: synapse for synapse in synapses}
     neurons = {neuron["skeleton_id"]: neuron for neuron in neurons}
 
-    predicted_synapses = {prediction["synapse_id"]: {**{"prediction": prediction["prediction"]}, **synapses[prediction["synapse_id"]], **neurons[synapses[prediction["synapse_id"]]["skeleton_id"]]} for prediction in predictions}
+    predicted_synapses = 
+    {
+            prediction["synapse_id"]: 
+            {
+                **{"prediction": prediction["prediction"]}, 
+                **synapses[prediction["synapse_id"]], 
+                **skeletons[synapses[prediction["synapse_id"]]["skeleton_id"]]
+                }
+            for prediction in predictions
+    }
 
     return predicted_synapses, predict_cfg
 

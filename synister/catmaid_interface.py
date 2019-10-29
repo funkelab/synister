@@ -6,7 +6,7 @@ import vispy
 import plotly.io as pio
 import plotly
 import random
-from synister.synister_db import SynisterDB
+from synister.synister_db import SynisterDb
 pio.renderers.default = "browser"
 
 
@@ -76,11 +76,12 @@ class Catmaid(object):
         plotly.offline.plot(data, filename="plot_brain_regions_catmaid", image="png")
 
     def plot_split_by_neuron(self, db_credentials, db_name, split_name, neurotransmitter):
-        db = SynisterDB(db_credentials)
+        db = SynisterDb(db_credentials, db_name)
         skids = set()
 
-        synapses = db.get_synapses_by_nt(db_name, [(neurotransmitter,)])[(neurotransmitter,)]
-        for synapse in synapses:
+        synapses = db.get_synapses(neurotransmitters=(neurotransmitter,))
+
+        for synapse in synapses.values():
             skid = synapse["skeleton_id"]
             skids.add(skid)
         skids = list(skids)

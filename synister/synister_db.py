@@ -447,6 +447,32 @@ class SynisterDb(object):
 
         return hemi_lineages
 
+    def get_predictions(self,
+                        split_name,
+                        experiment,
+                        train_number,
+                        predict_number):
+        """Get all predictions in given run
+
+
+            Returns:
+
+                Dictionary of synapse_ids to predictions.
+
+        """
+        db = self.__get_db(self.db_name + "_predictions")
+        prediction_collection = db["{}_{}_t{}_p{}".format(split_name, 
+                                                          experiment,
+                                                          train_number,
+                                                          predict_number)]
+
+        result = prediction_collection.find({})
+
+        predictions = {p["synapse_id"]: {"prediction": p["prediction"]}
+                       for p in result}
+
+        return predictions
+        
     def initialize_prediction(self, 
                               split_name,
                               experiment,
@@ -532,12 +558,26 @@ class SynisterDb(object):
                    split_name,
                    train_synapse_ids,
                    test_synapse_ids):
-        
-        db = self.__get_db()
-        synapses = db["synapses"]
 
-        synapses.update_many({"synapse_id": {"$in": train_synapse_ids}},
+        self.remove_split(split_name)
+ 
+        db = self.__get_db()
+        synapse_collection = db["synapses"]
+         
+        synapse_collection.update_many({"synapse_id": {"$in": train_synapse_ids}},
                              {"$set": {"splits.{}".format(split_name): "train"}})
 
-        synapses.update_many({"synapse_id": {"$in": test_synapse_ids}},
+        synapse_collection.update_many({"synapse_id": {"$in": test_synapse_ids}},
                              {"$set": {"splits.{}".format(split_name): "test"}})
+
+    def remove_split(self,
+                     split_name):
+
+        db = self.__get_db()
+        synapse_collection = db["synapses"]
+
+        synapse_collection.update_many({},
+                                        {"$unset": 
+                                        {"splits.{}".format(split_name): ""}
+                                        }
+                                       )

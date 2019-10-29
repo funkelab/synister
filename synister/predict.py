@@ -5,7 +5,7 @@ import logging
 from synister.read_config import read_worker_config, read_predict_config
 import sys
 import threading
-from synister.synister_db import SynisterDB
+from synister.synister_db import SynisterDb
 import time
 
 worker_config = read_worker_config("worker_config.ini")
@@ -15,9 +15,10 @@ base_cmd = "python {}".format("predict_pipeline.py")
 
 num_block_workers = worker_config["num_block_workers"]
 
-db = SynisterDB(predict_config["db_credentials"])
-db.initialize_prediction(predict_config["db_name_data"],
-                         predict_config["split_name"],
+db = SynisterDb(predict_config["db_credentials"], 
+                predict_config["db_name_data"])
+
+db.initialize_prediction(predict_config["split_name"],
                          predict_config["experiment"],
                          predict_config["train_number"],
                          predict_config["predict_number"])
@@ -25,14 +26,13 @@ db.initialize_prediction(predict_config["db_name_data"],
 def monitor_prediction(predict_config,
                        interval=60):
 
-    db = SynisterDB(predict_config["db_credentials"])
+    db = SynisterDb(predict_config["db_credentials"], predict_config["db_name_data"])
     start = time.time()
     while True:
-        done, total = db.count_predictions(predict_config["db_name_data"],
-                             predict_config["split_name"],
-                             predict_config["experiment"],
-                             predict_config["train_number"],
-                             predict_config["predict_number"])
+        done, total = db.count_predictions(predict_config["split_name"],
+                                           predict_config["experiment"],
+                                           predict_config["train_number"],
+                                           predict_config["predict_number"])
 
         time_elapsed = time.time() - start
         if done > 0:
