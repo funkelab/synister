@@ -550,7 +550,7 @@ class SynisterDB(object):
         return train_synapses, test_synapses
 
 
-    def get_synapse_locations(self, db_name, split_name, split, neurotransmitter):
+    def get_synapse_locations(self, db_name, split_name, split, neurotransmitter=(None,)):
         """
         neurotransmitter: tuple
         """
@@ -561,12 +561,17 @@ class SynisterDB(object):
 
         nt_known, nt_guess = self.get_neurotransmitters(db_name)
         nts = nt_known
-        if not neurotransmitter in nts:
-            raise ValueError("{} not in database.".format(neurotransmitter))
+        if neurotransmitters != (None,):
+            if not neurotransmitter in nts:
+                raise ValueError("{} not in database.".format(neurotransmitter))
 
-        synapses = self.get_synapses_by_nt(db_name,
-                                           [neurotransmitter])
-        
+        if neurotransmitter != (None,):
+            synapses = self.get_synapses_by_nt(db_name,
+                                               [neurotransmitter])
+        else:
+            synapses = self.get_collection(db_name, "synapses")
+            synapses = {neurotransmitter: synapses}
+ 
         locations = []
         for synapse in synapses[neurotransmitter]:
             in_split = False
