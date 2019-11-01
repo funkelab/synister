@@ -9,7 +9,14 @@ def read_predict_config(predict_config):
     config.read(predict_config)
 
     cfg_dict = {}
-    cfg_dict["synapse_types"] = [s for s in config.get("Predict", "synapse_types").split(", ")]
+    tmp = [s for s in config.get("Predict", "synapse_types").split(", ")]
+    synapse_types = []
+    for s in tmp:
+        if s == "None":
+            s = None
+        synapse_types.append(s)
+    cfg_dict["synapse_types"] = synapse_types
+
     cfg_dict["input_shape"] = tuple([int(c) for c in config.get("Predict", "input_shape").split(", ")])
     cfg_dict["fmaps"] = config.getint("Predict", "fmaps")
     cfg_dict["batch_size"] = config.getint("Predict", "batch_size")
