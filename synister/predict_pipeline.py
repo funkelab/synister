@@ -66,7 +66,7 @@ def test(worker_id,
     for synapse_type in synapse_types:
         logger.info('Predict synapse type {}...'.format(synapse_type))
         synapses = db.get_synapses(split_name=split_name,
-                                   neurotransmitters=tuple(synapse_type,))
+                                   neurotransmitters=(synapse_type,))
 
         locations_for_type = [(int(synapse["z"]), 
                                int(synapse["y"]),
