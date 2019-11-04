@@ -561,7 +561,7 @@ class SynisterDB(object):
 
         nt_known, nt_guess = self.get_neurotransmitters(db_name)
         nts = nt_known
-        if neurotransmitters != (None,):
+        if neurotransmitter != (None,):
             if not neurotransmitter in nts:
                 raise ValueError("{} not in database.".format(neurotransmitter))
 
