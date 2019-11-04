@@ -67,6 +67,10 @@ class Catmaid(object):
         """
         volumes = [pymaid.get_volume(v) for v in volumes]
         data = pymaid.plot3d(skeleton_ids + volumes, connectors=connectors, backend='plotly')
+        for trace in data["data"]:
+            if "showlegend" in trace:
+                trace["showlegend"] = False
+        data["layout"]["scene"]["camera"] = {'eye': {'x': 0, 'y': 1.3, 'z': 0}}
         plotly.offline.plot(data, filename="plot_neurons", image="png")
 
     def plot_brain_regions(self, test_brain_regions, train_brain_regions, connectors=True):
@@ -75,16 +79,28 @@ class Catmaid(object):
         data = pymaid.plot3d(test_volumes + train_volumes + overlap_volumes, connectors=connectors, backend='plotly')
         plotly.offline.plot(data, filename="plot_brain_regions_catmaid", image="png")
 
-    def plot_split_by_neuron(self, db_credentials, db_name, split_name, neurotransmitter):
+    def plot_split_by_neuron(self, db_credentials, db_name, split_name, neurotransmitter, test_boolean):
         db = SynisterDb(db_credentials, db_name)
-        skids = set()
+        test_skids = set()
+        train_skids = set()
 
         synapses = db.get_synapses(neurotransmitters=(neurotransmitter,))
 
         for synapse in synapses.values():
             skid = synapse["skeleton_id"]
-            skids.add(skid)
-        skids = list(skids)
-        if len(skids) > 25:
-            skids = random.sample(skids, 25)
-        self.plot_neurons(skids)
+            if synapse["splits"][split_name] == "train":
+                train_skids.add(skid)
+            else:
+                test_skids.add(skid)
+    
+        test_skids = list(test_skids)
+        train_skids = list(train_skids)
+        if len(test_skids) > 25:
+            test_skids = random.sample(test_skids, 25)
+        if len(train_skids) >25:
+            train_skids = random.sample(train_skids, 25)
+        
+        if test_boolean == True:
+            self.plot_neurons(test_skids)
+        else:
+            self.plot_neurons(train_skids)
