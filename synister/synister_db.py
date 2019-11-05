@@ -64,7 +64,8 @@ class SynisterDB(object):
                               split_name,
                               experiment,
                               train_number,
-                              predict_number):
+                              predict_number,
+                              overwrite=False):
 
         db = self.__get_db(db_name + "_predictions")
         predictions = db["{}_{}_t{}_p{}".format(split_name, 
@@ -74,7 +75,10 @@ class SynisterDB(object):
 
         # Existence check:
         if predictions.find({}).count() > 0:
-            db.drop_collection(predictions)
+            if overwrite:
+                db.drop_collection(predictions)
+            else:
+                return 0
         
         train_synapses, test_synapses = self.read_split(db_name,
                                                         split_name)
@@ -206,6 +210,32 @@ class SynisterDB(object):
 
         if not (result.matched_count == 1):
             raise ValueError("Prediction failed to update, none or multiple matching synapses in split {}".format(split_name))
+
+    def filter_predicted(self, db_name, locs):
+        filtered_locations = []
+        db = self.__get_db(db_name + "_predictions")
+        predictions = db["{}_{}_t{}_p{}".format(split_name, 
+                                                experiment,
+                                                train_number,
+                                                predict_number)]
+
+        for loc in locs:
+            z = loc[0]
+            y = loc[1]
+            x = loc[2]
+            synapse_in_db = self.get_synapse_by_position(db_name,
+                                                         x,
+                                                         y,
+                                                         z)
+
+            result = predictions.find({"$and": [{"synapse_id": synapse_in_db["synapse_id"]}, 
+                                                {"prediction": {"$ne": None}}]})
+            if result.count() > 0:
+                pass
+            else:
+                filtered_locations.append(loc)
+
+        return filtered_locations
     
 
     def get_collection(self, db_name, collection_name):
