@@ -70,14 +70,22 @@ class Catmaid(object):
         for trace in data["data"]:
             if "showlegend" in trace:
                 trace["showlegend"] = False
-        data["layout"]["scene"]["camera"] = {'eye': {'x': 0, 'y': 1.3, 'z': 0}}
-        plotly.offline.plot(data, filename="plot_neurons", image="png")
+        data["layout"]["scene"]["camera"] = {'eye': {'x': 0, 'y': 2, 'z': 0}}
+        data["layout"]["scene"]["xaxis"]["range"] = [-700000,-350000]
+        data["layout"]["scene"]["xaxis"]["dtick"] = 50000
+        data["layout"]["scene"]["yaxis"]["range"] = [-200000, -50000]
+        data["layout"]["scene"]["yaxis"]["dtick"] = 50000
+        data["layout"]["scene"]["zaxis"]["range"] = [-350000, -50000]
+        data["layout"]["scene"]["zaxis"]["dtick"] = 50000
+        data["layout"]["scene"]["aspectmode"] = "cube"
+        
+        plotly.offline.plot(data, filename="plot_neurons", image="svg")
 
     def plot_brain_regions(self, test_brain_regions, train_brain_regions, connectors=True):
         test_volumes = [pymaid.get_volume(v, color=(255,0,0,.2)) for v in test_brain_regions]           #test is red
         train_volumes = [pymaid.get_volume(v, color=(0,255,0,.2)) for v in train_brain_regions]         #train is green
         data = pymaid.plot3d(test_volumes + train_volumes + overlap_volumes, connectors=connectors, backend='plotly')
-        plotly.offline.plot(data, filename="plot_brain_regions_catmaid", image="png")
+        plotly.offline.plot(data, filename="plot_brain_regions_catmaid")
 
     def plot_split_by_neuron(self, db_credentials, db_name, split_name, neurotransmitter, test_boolean):
         db = SynisterDb(db_credentials, db_name)
