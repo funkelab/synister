@@ -21,28 +21,54 @@ def parse_prediction(db_credentials,
     synapses = db.get_synapses()
     skeletons = db.get_skeletons()
 
-    synapses = {}
-
-    synapses = {synapse["synapse_id"]: synapse for synapse in synapses}
-    neurons = {neuron["skeleton_id"]: neuron for neuron in neurons}
-
-    predicted_synapses = 
+    predicted_synapses =\
     {
-            prediction["synapse_id"]: 
+            synapse_id: 
             {
                 **{"prediction": prediction["prediction"]}, 
-                **synapses[prediction["synapse_id"]], 
-                **skeletons[synapses[prediction["synapse_id"]]["skeleton_id"]]
+                **synapses[synapse_id], 
+                **skeletons[synapses[synapse_id]["skeleton_id"]]
                 }
-            for prediction in predictions
+            for synapse_id, prediction in predictions.items()
     }
 
     return predicted_synapses, predict_cfg
 
+def expected_probability_matrix(synapses, predict_config):
+    synapse_types = predict_config["synapse_types"]
+    
+    expected_probability = {st: np.zeros(len(synapse_types)) for st in synapse_types}
+    samples_per_type = {st: 0 for st in synapse_types}
+    for synapse_id, synapse_data in synapses.items():
+        if synapse_data["prediction"] == "null":
+            continue
 
-def confusion_matrix(synapses, predict_config):
+        nt_known = synapse_data["nt_known"]
+        if len(nt_known)>1:
+            raise Warning("More than one known nt")
+        nt_known = nt_known[0]
+        gt_class = synapse_types.index(nt_known)
+        expected_probability[nt_known] += np.array(synapse_data["prediction"])
+        samples_per_type[nt_known] += 1
+
+    confusion_matrix = np.zeros([len(synapse_types)] * 2, dtype=float)
+    for nt_known in expected_probability:
+        expected_probability[nt_known] /= samples_per_type[nt_known]
+
+        gt_class = synapse_types.index(nt_known)
+        i = 0
+        for p in expected_probability[nt_known]:
+            confusion_matrix[gt_class, i] = p
+            i += 1
+
+    return confusion_matrix
+
+def confusion_matrix(synapses, predict_config, normalization_factor=None):
     synapse_types = predict_config["synapse_types"]
     confusion_matrix = np.zeros([len(synapse_types)] * 2, dtype=float)
+
+    if normalization_factor is None:
+        normalization_factor = {synapse_id: 1. for synapse_id in synapses}
 
     n = 0
     for synapse_id, synapse_data in synapses.items():
@@ -58,13 +84,35 @@ def confusion_matrix(synapses, predict_config):
         gt_class = synapse_types.index(nt_known)
         predicted_class = np.argmax(synapse_data["prediction"])
 
-        confusion_matrix[gt_class, predicted_class] += 1
+        confusion_matrix[gt_class, predicted_class] += 1 * normalization_factor[synapse_id]
         n += 1
 
     return confusion_matrix
 
+def skeleton_confusion_matrix(synapses, predict_config):
+    synapse_types = predict_config["synapse_types"]
+    confusion_matrix = np.zeros([len(synapse_types)] * 2, dtype=float)
+    skeleton_ids = set([s["skeleton_id"] for s in synapses.values()])
+    skeleton_to_prediction = {skid: [] for skid in skeleton_ids}
+    skeleton_to_gt = {}
+    for synapse_id, synapse_data in synapses.items():
+        zeros = np.zeros(len(synapse_types))
+        arg_max = np.argmax(synapse_data["prediction"])
+        zeros[arg_max] = 1
+        skeleton_to_prediction[synapse_data["skeleton_id"]].append(
+                zeros)
+        skeleton_to_gt[synapse_data["skeleton_id"]] =\
+                synapse_types.index(synapse_data["nt_known"][0])
 
-def plot_confusion_matrix(cm, synapse_types):
+
+    for skeleton_id, predictions in skeleton_to_prediction.items():
+        majority_vote = np.argmax(np.sum(np.array(predictions), axis=0))
+        confusion_matrix[skeleton_to_gt[skeleton_id], majority_vote] += 1
+
+    return confusion_matrix
+
+def plot_confusion_matrix(cm, predict_cfg, name=""):
+    synapse_types = predict_cfg["synapse_types"]
     df_cm = pd.DataFrame(cm, index = [i for i in synapse_types],
                                 columns = [i for i in synapse_types])
     plt.figure(figsize = (10,10))
@@ -74,9 +122,15 @@ def plot_confusion_matrix(cm, synapse_types):
     plt.ylabel("Actual")
     plt.xlabel("Predicted")
     plt.show()
-    print(confusion_matrix)
+    train_number = predict_cfg["train_number"]
+    iteration = int(predict_cfg["train_checkpoint"].split("_")[-1])
+    plt.title("Confusion Matrix t{} i{} {}".format(train_number, iteration, name))
+    if name:
+        name = "_" + name
+    plt.savefig("confusion_matrix_t{}_i{}{}".format(train_number, iteration, name))
 
-def plot_confusion_matrix_normalized(cm, synapse_types, predict_cfg):
+def plot_confusion_matrix_normalized(cm, predict_cfg, name=""):
+    synapse_types = predict_cfg["synapse_types"]
     cm_row_sum = np.sum(cm, axis=1)
     cm_normalized = (cm.transpose()/cm_row_sum).transpose()
     df_cm = pd.DataFrame(cm_normalized, index = [i for i in synapse_types],
@@ -90,8 +144,10 @@ def plot_confusion_matrix_normalized(cm, synapse_types, predict_cfg):
     checkpoint = predict_cfg["train_checkpoint"]
     iteration = checkpoint[checkpoint.rindex("_")+1:]
     train_number = predict_cfg["train_number"]
-    plt.title("Normalized Confusion Matrix t{} i{}".format(train_number, iteration))
-    plt.savefig("normalized_confusion_matrix_t{}_i{}".format(train_number, iteration))
+    plt.title("Normalized Confusion Matrix t{} i{} {}".format(train_number, iteration, name))
+    if name:
+        name = "_" + name
+    plt.savefig("normalized_confusion_matrix_t{}_i{}{}".format(train_number, iteration, name))
     plt.show()
 
 def find_accuracy(confusion_matrix):                         #returns a tuple (overall accuracy, average accuracy)
