@@ -3,6 +3,7 @@ from configparser import ConfigParser
 from copy import deepcopy
 import logging
 import numpy as np
+import random
 
 logger = logging.getLogger(__name__)
 
@@ -613,6 +614,13 @@ class SynisterDB(object):
        
         return locations
 
+    def create_queryable(self, documents):
+        db_name = "queryable"
+        db = self.__get_db(db_name)
+        db.drop_collection("tmp")
+        collection = db["tmp"]
+        collection.insert_many(documents)
+        return collection
 
     def __get_client(self):
         client = MongoClient(self.auth_string, connect=False)
