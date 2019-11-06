@@ -62,19 +62,16 @@ def test(worker_id,
 
     logger.info('Start prediction...')
 
-    locations = []
-    for synapse_type in synapse_types:
-        logger.info('Predict synapse type {}...'.format(synapse_type))
-        locations.extend(db.get_synapse_locations(db_name_data,
-                                                  split_name,
-                                                  "test",
-                                                  tuple([synapse_type])))
-
+    locations = db.get_test_locations(db_name_data,
+                                      split_name,
+                                      experiment,
+                                      train_number,
+                                      predict_number)
 
     loc_start = int(float(worker_id)/num_block_workers * len(locations)) 
     loc_end = int(float(worker_id + 1)/num_block_workers * len(locations))
     my_locations = locations[loc_start:loc_end]
- 
+
     for i in range(0, len(my_locations), batch_size):
         logger.info('Predict location {}/{}'.format(i, len(my_locations)))
         locs = my_locations[i:i+batch_size]

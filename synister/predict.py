@@ -26,6 +26,14 @@ def monitor_prediction(predict_config,
                        interval=60):
 
     db = SynisterDB(predict_config["db_credentials"])
+
+    done_0, _ = db.count_predictions(predict_config["db_name_data"],
+                             predict_config["split_name"],
+                             predict_config["experiment"],
+                             predict_config["train_number"],
+                             predict_config["predict_number"])
+ 
+
     start = time.time()
     while True:
         done, total = db.count_predictions(predict_config["db_name_data"],
@@ -35,8 +43,8 @@ def monitor_prediction(predict_config,
                              predict_config["predict_number"])
 
         time_elapsed = time.time() - start
-        if done > 0:
-            eta = time_elapsed/done * (total - done)
+        if done-done_0 > 0:
+            eta = time_elapsed/(done-done_0) * (total - done)
         else:
             eta = "NA"
         print("{} from {} predictions done".format(done, total))

@@ -211,33 +211,28 @@ class SynisterDB(object):
         if not (result.matched_count == 1):
             raise ValueError("Prediction failed to update, none or multiple matching synapses in split {}".format(split_name))
 
-    def filter_predicted(self, db_name, locs):
-        filtered_locations = []
-        db = self.__get_db(db_name + "_predictions")
+    def get_test_locations(self, 
+                           db_name_data,
+                           split_name,
+                           experiment,
+                           train_number,
+                           predict_number):
+        
+        db = self.__get_db(db_name_data + "_predictions")
         predictions = db["{}_{}_t{}_p{}".format(split_name, 
                                                 experiment,
                                                 train_number,
                                                 predict_number)]
 
-        for loc in locs:
-            z = loc[0]
-            y = loc[1]
-            x = loc[2]
-            synapse_in_db = self.get_synapse_by_position(db_name,
-                                                         x,
-                                                         y,
-                                                         z)
+        result = predictions.find({"prediction": None})
+        synapse_ids = [doc["synapse_id"] for doc in result]
 
-            result = predictions.find({"$and": [{"synapse_id": synapse_in_db["synapse_id"]}, 
-                                                {"prediction": {"$ne": None}}]})
-            if result.count() > 0:
-                pass
-            else:
-                filtered_locations.append(loc)
+        db = self.__get_db(db_name_data)
+        test_synapses = db["synapses"].find({"synapse_id": {"$in": synapse_ids}})
+        test_synapse_locations = [[int(s["z"]), int(s["y"]), int(s["x"])] for s in test_synapses]
 
-        return filtered_locations
-    
-
+        return test_synapse_locations
+   
     def get_collection(self, db_name, collection_name):
         db = self.__get_db(db_name)
         collection = db[collection_name]
