@@ -4,6 +4,7 @@ from copy import deepcopy
 import logging
 import numpy as np
 import random
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -617,10 +618,15 @@ class SynisterDB(object):
     def create_queryable(self, documents):
         db_name = "queryable"
         db = self.__get_db(db_name)
-        db.drop_collection("tmp")
-        collection = db["tmp"]
+        collection_name = str(os.getpid())
+        db.drop_collection(collection_name)
+        collection = db[collection_name]
         collection.insert_many(documents)
         return collection
+
+    def destroy_queryable(self, queryable):
+        db = self.__get_db("queryable")
+        db.drop_collection(queryable)
 
     def __get_client(self):
         client = MongoClient(self.auth_string, connect=False)
