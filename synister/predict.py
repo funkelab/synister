@@ -45,10 +45,13 @@ def monitor_prediction(predict_config,
         time_elapsed = time.time() - start
         if done-done_0 > 0:
             eta = time_elapsed/(done-done_0) * (total - done)
+            sps = (done - done_0)/time_elapsed
         else:
             eta = "NA"
+            sps = "NA"
         print("{} from {} predictions done".format(done, total))
         print("Time elapsed {}".format(time_elapsed))
+        print("{} samples/second".format(sps))
         print("ETA: {}".format(eta))
         time.sleep(interval)
 
