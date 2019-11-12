@@ -63,19 +63,18 @@ def test(worker_id,
     logger.info('Start prediction...')
 
     locations = []
-    for synapse_type in synapse_types:
-        logger.info('Predict synapse type {}...'.format(synapse_type))
-        synapses = db.get_synapses(split_name=split_name,
-                                   neurotransmitters=(synapse_type,))
+    synapses = db.get_synapses(split_name=split_name)
+    predict_synapses = db.get_predictions(split_name,
+                                          experiment,
+                                          train_number,
+                                          predict_number)
 
-        locations_for_type = [(int(synapse["z"]), 
-                               int(synapse["y"]),
-                               int(synapse["x"]))
-                               for synapse in synapses.values()
-                               if synapse["splits"][split_name]=="test"]
-
-        locations.extend(locations_for_type)
-
+    locations = [(int(synapse["z"]), 
+                  int(synapse["y"]),
+                  int(synapse["x"]))
+                  for synapse_id, synapse in synapses.items()
+                  if synapse["splits"][split_name]=="test" and
+                  predict_synapses[synapse_id]["prediction"] == None]
 
     loc_start = int(float(worker_id)/num_block_workers * len(locations)) 
     loc_end = int(float(worker_id + 1)/num_block_workers * len(locations))

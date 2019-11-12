@@ -478,7 +478,8 @@ class SynisterDb(object):
                               split_name,
                               experiment,
                               train_number,
-                              predict_number):
+                              predict_number,
+                              overwrite=False):
 
         db = self.__get_db(self.db_name + "_predictions")
         predictions = db["{}_{}_t{}_p{}".format(split_name, 
@@ -488,7 +489,10 @@ class SynisterDb(object):
 
         # Existence check:
         if predictions.count_documents({}) > 0:
-            db.drop_collection(predictions)
+            if overwrite:
+                db.drop_collection(predictions)
+            else:
+                return 0 
 
         synapses_in_split = self.get_synapses(split_name=split_name)
 
