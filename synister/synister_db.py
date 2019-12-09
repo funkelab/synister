@@ -147,7 +147,8 @@ class SynisterDb(object):
 
     def __get_split_name_query(self, split_name):
         query = {"$or": [{"splits.{}".format(split_name): "train"}, 
-                         {"splits.{}".format(split_name): "test"}]}
+                         {"splits.{}".format(split_name): "test"},
+                         {"splits.{}".format(split_name): "validation"}]}
         return query
 
     def create(self, overwrite=False):
@@ -479,7 +480,8 @@ class SynisterDb(object):
                               experiment,
                               train_number,
                               predict_number,
-                              overwrite=False):
+                              overwrite=False,
+                              validation=False):
 
         db = self.__get_db(self.db_name + "_predictions")
         predictions = db["{}_{}_t{}_p{}".format(split_name, 
@@ -498,13 +500,19 @@ class SynisterDb(object):
 
         train_synapses = []
         test_synapses = []
+        validation_synapses = []
         for synapse_id, synapse in synapses_in_split.items():
             if synapse["splits"][split_name] == "train":
                 train_synapses.append(synapse_id)
             elif synapse["splits"][split_name] == "test":
                 test_synapses.append(synapse_id)
+            elif synapse["splits"][split_name] == "validation":
+                validation_synapses.append(synapse_id)
             else:
                 raise ValueError("Split corrupted, abort")
+
+        if validation:
+            test_synapses = validation_synapses
         
         prediction_documents = []
         for synapse_id in test_synapses:
@@ -562,7 +570,8 @@ class SynisterDb(object):
     def make_split(self,
                    split_name,
                    train_synapse_ids,
-                   test_synapse_ids):
+                   test_synapse_ids,
+                   validation_synapse_ids=None):
 
         self.remove_split(split_name)
  
@@ -574,6 +583,11 @@ class SynisterDb(object):
 
         synapse_collection.update_many({"synapse_id": {"$in": test_synapse_ids}},
                              {"$set": {"splits.{}".format(split_name): "test"}})
+
+        if validation_synapse_ids is not None:
+            synapse_collection.update_many({"synapse_id": {"$in": validation_synapse_ids}},
+                                           {"$set": {"splits.{}".format(split_name): "validation"}})
+
 
     def remove_split(self,
                      split_name):

@@ -23,6 +23,7 @@ def read_predict_config(predict_config):
     cfg_dict["experiment"] = config.get("Predict", "experiment")
     cfg_dict["train_number"] = config.getint("Predict", "train_number")
     cfg_dict["predict_number"] = config.getint("Predict", "predict_number")
+    cfg_dict["split_part"] = config.get("Predict", "split_part")
     downsample_factors = config.get("Predict", "downsample_factors")
     downsample_factors = [s.strip("(").strip(")").split(",") for s in downsample_factors.split("), ")]
     cfg_dict["downsample_factors"] = []

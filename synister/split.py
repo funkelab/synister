@@ -5,7 +5,8 @@ def find_optimal_split(synapse_ids,
                        nt_by_synapse_id,
                        neurotransmitters,
                        supersets,
-                       train_fraction=0.8):
+                       train_fraction=0.8,
+                       ensure_non_empty=True):
     """Find optimal synapse split per neurotransmitter 
        and synapse superset (e.g. hemi lineage/neuron/brain region)
 
@@ -157,35 +158,36 @@ def find_optimal_split(synapse_ids,
             prev_nt = nt
 
     # Ensure that at least one superset is in test for each nt
-    for nt in neurotransmitters:
-        non_zero_constraint = pylp.LinearConstraint()
-        non_one_constraint = pylp.LinearConstraint()
+    if ensure_non_empty:
+        for nt in neurotransmitters:
+            non_zero_constraint = pylp.LinearConstraint()
+            non_one_constraint = pylp.LinearConstraint()
 
-        # Compute number of supersets in nt:
-        non_zero_ss = 0
-        for ss in supersets:
-            if synapses_by_superset_and_nt[(ss, nt)]:
-                non_zero_ss += 1
-
-        # If there are more than one superset
-        # require that the number of supersets
-        # in test and train is at least 1
-        if non_zero_ss > 1:
+            # Compute number of supersets in nt:
+            non_zero_ss = 0
             for ss in supersets:
                 if synapses_by_superset_and_nt[(ss, nt)]:
-                    non_zero_constraint.set_coefficient(
-                            train_indicators[(ss, nt)], 1)
-                    non_one_constraint.set_coefficient(
-                            train_indicators[(ss, nt)], 1)
+                    non_zero_ss += 1
 
-            non_zero_constraint.set_relation(pylp.Relation.GreaterEqual)
-            non_zero_constraint.set_value(1)
+            # If there are more than one superset
+            # require that the number of supersets
+            # in test and train is at least 1
+            if non_zero_ss > 1:
+                for ss in supersets:
+                    if synapses_by_superset_and_nt[(ss, nt)]:
+                        non_zero_constraint.set_coefficient(
+                                train_indicators[(ss, nt)], 1)
+                        non_one_constraint.set_coefficient(
+                                train_indicators[(ss, nt)], 1)
 
-            non_one_constraint.set_relation(pylp.Relation.LessEqual)
-            non_one_constraint.set_value(non_zero_ss - 1)
+                non_zero_constraint.set_relation(pylp.Relation.GreaterEqual)
+                non_zero_constraint.set_value(1)
 
-            constraints.add(non_zero_constraint)
-            constraints.add(non_one_constraint)
+                non_one_constraint.set_relation(pylp.Relation.LessEqual)
+                non_one_constraint.set_value(non_zero_ss - 1)
+
+                constraints.add(non_zero_constraint)
+                constraints.add(non_one_constraint)
 
     # add sl_NT + su_NT to objective
     objective = pylp.LinearObjective(num_variables)

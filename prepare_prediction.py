@@ -105,6 +105,7 @@ def create_predict_config(base_dir,
     config.set('Predict', 'raw_container', str(train_config_dict["raw_container"]))
     config.set('Predict', 'raw_dataset', str(train_config_dict["raw_dataset"]))
     config.set('Predict', 'downsample_factors', str(train_config_dict["downsample_factors"])[1:-1])
+    config.set('Predict', 'split_part', "test")
     return config
  
 

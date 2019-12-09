@@ -31,7 +31,11 @@ def test(worker_id,
          predict_number,
          num_cache_workers,
          num_block_workers,
+         split_part="test",
          **kwargs):
+
+    if not split_part in ["validation", "test"]:
+        raise ValueError("'split_part' must be either 'test' or 'validation'")
 
 
     model = init_vgg(train_checkpoint,
@@ -73,7 +77,7 @@ def test(worker_id,
                   int(synapse["y"]),
                   int(synapse["x"]))
                   for synapse_id, synapse in synapses.items()
-                  if synapse["splits"][split_name]=="test" and
+                  if synapse["splits"][split_name]==split_part and
                   predict_synapses[synapse_id]["prediction"] == None]
 
     loc_start = int(float(worker_id)/num_block_workers * len(locations)) 
