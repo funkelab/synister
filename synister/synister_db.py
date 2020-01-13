@@ -5,6 +5,7 @@ import logging
 import time
 from itertools import permutations
 import os
+from iteration_utilities import duplicates
 
 logger = logging.getLogger(__name__)
 
@@ -44,11 +45,12 @@ class SynisterDb(object):
                         "synapse_id": None,
                         "skeleton_id": None,
                         "source_id": None,
-                        "splits": None}
+                        "splits": None,
+                        "prepost": None}
 
         self.skeleton = {"skeleton_id": None,
-                       "hemi_lineage_id": None,
-                       "nt_known": None}
+                         "hemi_lineage_id": None,
+                         "nt_known": None}
 
         self.hemi_lineage = {"hemi_lineage_id": None,
                              "hemi_lineage_name": None,
@@ -205,6 +207,80 @@ class SynisterDb(object):
     def rename_collection(self, old_collection, new_collection):
         db = self.__get_db()
         db[old_collection].rename(new_collection)
+
+    def write_synapse(self, synapse_id, skeleton_id, x, y, z, source_id):
+        db = self.__get_db()
+        synapse_collection = db["synapses"]
+        synapse_document = self.__generate_synapse(x, y, z, synapse_id, skeleton_id, source_id)
+        synapse_collection.insert_one(synapse_document)
+
+    def write_skeleton(self, skeleton_id, hemi_lineage_id, nt_known):
+        db = self.__get_db()
+        skeleton_collection = db["skeletons"]
+        skeleton_document = self.__generate_skeleton(skeleton_id, hemi_lineage_id, nt_known)
+        skeleton_collection.insert_one(skeleton_document)
+
+    def write_hemi_lineage(self, hemi_lineage_id, hemi_lineage_name, nt_guess):
+        db = self.__get_db()
+        hemi_lineage_collection = db["hemi_lineages"]
+        hemi_lineage_document = self.__generate_hemi_lineage(hemi_lineage_id, hemi_lineage_name, nt_guess)
+        hemi_lineage_collection.insert_one(hemi_lineage_document)
+
+    def validate_synapses(self):
+        db = self.__get_db()
+        synapse_collection = db["synapses"]
+        all_synapses = [s for s in synapse_collection.find({})]
+
+        # Check for duplicates:
+        synapse_ids = [s["synapse_id"] for s in all_synapses]
+        synapse_locs = [(s["x"], s["y"], s["z"]) for s in all_synapses]
+
+        duplicate_synapse_ids = list(duplicates(synapse_ids))
+        duplicate_synapse_locs = list(duplicates(synapse_locs))
+
+        # Check that skeleton exists:
+        skeleton_collection = db["skeletons"]
+        unmatched_synapses = []
+        for synapse in all_synapses:
+            if skeleton_collection.count_documents({"skeleton_id": synapse["skeleton_id"]}) == 0:
+                unmatched_synapses.append(synapse["synapse_id"])
+
+        return {"id_duplicates": duplicate_synapse_ids,
+                "loc_duplicates": duplicate_synapse_locs,
+                "no_skid_match": unmatched_synapses}
+
+    def validate_skeletons(self):
+        db = self.__get_db()
+        skeleton_collection = db["skeletons"]
+        all_skeletons = [s for s in skeleton_collection.find({})]
+
+        # Check for duplicates:
+        skeleton_ids = [s["skeleton_id"] for s in all_skeletons]
+        duplicate_skeleton_ids = list(duplicates(skeleton_ids))
+
+        # Check that hemi_lineage exists:
+        hemi_lineage_collection = db["hemi_lineages"]
+        unmatched_skeletons = []
+        for skeleton in all_skeletons:
+            if hemi_lineage_collection.count_documents({"hemi_lineage_id": skeleton["hemi_lineage_id"]}) == 0:
+                unmatched_skeletons.append(skeleton["skeleton_id"])
+
+        return {"id_duplicates": duplicate_skeleton_ids,
+                "no_hlid_match": unmatched_skeletons}
+
+    def validate_hemi_lineages(self):
+        db = self.__get_db()
+        hemi_lineage_collection = db["hemi_lineages"]
+        all_hemi_lineages = [h for h in hemi_lineage_collection.find({})]
+
+        # Check for duplicates:
+        hemi_lineage_ids = [h["hemi_lineage_id"] for h in all_hemi_lineages]
+        hemi_lineage_names = [h["hemi_lineage_name"] for h in all_hemi_lineages]
+        duplicate_hemi_lineage_ids = list(duplicates(hemi_lineage_ids))
+        duplicate_hemi_lineage_names = list(duplicates(hemi_lineage_names))
+
+        return {"id_duplicates": duplicate_hemi_lineage_ids,
+                "name_duplicates": duplicate_hemi_lineage_names}
 
     def get_synapses(self, skeleton_ids=None, neurotransmitters=None, positions=None, 
                      synapse_ids=None, hemi_lineage_name=None, hemi_lineage_id=None,
