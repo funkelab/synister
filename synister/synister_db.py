@@ -225,31 +225,7 @@ class SynisterDb(object):
         db = self.__get_db()
         db[old_collection].rename(new_collection)
 
-    def write_synapse(self, synapse_id, skeleton_id, x, y, z, prepost=None, meta_id=None):
-        db = self.__get_db()
-        synapse_collection = db["synapses"]
-        synapse_document = self.__generate_synapse(x, y, z, synapse_id, skeleton_id, prepost, meta_id)
-        synapse_collection.insert_one(synapse_document)
-
-    def write_skeleton(self, skeleton_id, hemi_lineage_id, nt_known):
-        db = self.__get_db()
-        skeleton_collection = db["skeletons"]
-        skeleton_document = self.__generate_skeleton(skeleton_id, hemi_lineage_id, nt_known)
-        skeleton_collection.insert_one(skeleton_document)
-
-    def write_hemi_lineage(self, hemi_lineage_id, hemi_lineage_name, nt_guess):
-        db = self.__get_db()
-        hemi_lineage_collection = db["hemi_lineages"]
-        hemi_lineage_document = self.__generate_hemi_lineage(hemi_lineage_id, hemi_lineage_name, nt_guess)
-        hemi_lineage_collection.insert_one(hemi_lineage_document)
-
-    def write_meta(self, meta_id, group, tracer):
-        db = self.__get_db()
-        meta_collection = db["meta"]
-        meta_document = self.__generate_meta(meta_id, group, tracer)
-        meta_collection.insert_one(meta_document)
-
-    def write_many(self, synapses=None, skeletons=None, hemi_lineages=None, metas=None):
+    def write(self, synapses=None, skeletons=None, hemi_lineages=None, metas=None):
         db = self.__get_db()
         if synapses is not None:
             synapse_documents = [self.__generate_synapse(**synapse) for synapse in synapses]
