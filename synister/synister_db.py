@@ -36,17 +36,16 @@ class SynisterDb(object):
                                                           self.credentials["port"])
 
 
-        self.collections = ["synapses", "skeletons", "hemi_lineages"]
-
+        self.collections = ["synapses", "skeletons", "hemi_lineages", "meta"]
 
         self.synapse = {"x": None,
                         "y": None,
                         "z": None,
                         "synapse_id": None,
                         "skeleton_id": None,
-                        "source_id": None,
                         "splits": None,
-                        "prepost": None}
+                        "prepost": None,
+                        "meta_id": None}
 
         self.skeleton = {"skeleton_id": None,
                          "hemi_lineage_id": None,
@@ -58,6 +57,10 @@ class SynisterDb(object):
 
         self.prediction = {"synapse_id": None,
                            "prediction": None}
+
+        self.meta = {"meta_id": None,
+                     "group": None,
+                     "tracer": None}
 
         self.db_name = db_name
 
@@ -73,14 +76,15 @@ class SynisterDb(object):
         db = client[db_name]
         return db
 
-    def __generate_synapse(self, x, y, z, synapse_id, skeleton_id, source_id):
+    def __generate_synapse(self, x, y, z, synapse_id, skeleton_id, prepost=None, meta_id=None):
         synapse = deepcopy(self.synapse)
         synapse["x"] = x
         synapse["y"] = y
         synapse["z"] = z
         synapse["synapse_id"] = synapse_id
         synapse["skeleton_id"] = skeleton_id
-        synapse["source_id"] = str(source_id).upper()
+        synapse["meta_id"] = meta_id
+        synapse["prepost"] = prepost
         return synapse
 
     def __generate_skeleton(self, skeleton_id, hemi_lineage_id, nt_known):
@@ -90,7 +94,10 @@ class SynisterDb(object):
         if isinstance(nt_known, list):
             skeleton["nt_known"] = sorted([str(nt).lower() for nt in nt_known])
         else:
-            skeleton["nt_known"] = [str(nt_known).lower()]
+            if skeleton["nt_known"] is None:
+                pass
+            else:
+                skeleton["nt_known"] = [str(nt_known).lower()]
         return skeleton
 
     def __generate_hemi_lineage(self, hemi_lineage_id, hemi_lineage_name, nt_guess):
@@ -100,10 +107,20 @@ class SynisterDb(object):
         if isinstance(nt_guess, list):
             hemi_lineage["nt_guess"] = sorted([str(nt).lower() for nt in nt_guess])
         else:
-            hemi_lineage["nt_guess"] = [str(nt_guess).lower()]
-
+            if hemi_lineage["nt_guess"] is None:
+                pass
+            else:
+                hemi_lineage["nt_guess"] = [str(nt_guess).lower()]
         return hemi_lineage
 
+    def __generate_meta(self, meta_id, group, tracer):
+        meta = deepcopy(self.meta)
+        meta["meta_id"] = int(meta_id)
+        if not group is None:
+            meta["group"] = group.lower()
+        if not tracer is None:
+            meta["tracer"] = tracer.lower()
+        return meta
 
     def __consolidate_unknown(self, hemi_lineage_name):
         # find unknown_ids:
@@ -208,10 +225,10 @@ class SynisterDb(object):
         db = self.__get_db()
         db[old_collection].rename(new_collection)
 
-    def write_synapse(self, synapse_id, skeleton_id, x, y, z, source_id):
+    def write_synapse(self, synapse_id, skeleton_id, x, y, z, prepost=None, meta_id=None):
         db = self.__get_db()
         synapse_collection = db["synapses"]
-        synapse_document = self.__generate_synapse(x, y, z, synapse_id, skeleton_id, source_id)
+        synapse_document = self.__generate_synapse(x, y, z, synapse_id, skeleton_id, prepost, meta_id)
         synapse_collection.insert_one(synapse_document)
 
     def write_skeleton(self, skeleton_id, hemi_lineage_id, nt_known):
@@ -225,6 +242,31 @@ class SynisterDb(object):
         hemi_lineage_collection = db["hemi_lineages"]
         hemi_lineage_document = self.__generate_hemi_lineage(hemi_lineage_id, hemi_lineage_name, nt_guess)
         hemi_lineage_collection.insert_one(hemi_lineage_document)
+
+    def write_meta(self, meta_id, group, tracer):
+        db = self.__get_db()
+        meta_collection = db["meta"]
+        meta_document = self.__generate_meta(meta_id, group, tracer)
+        meta_collection.insert_one(meta_document)
+
+    def write_many(self, synapses=None, skeletons=None, hemi_lineages=None, metas=None):
+        db = self.__get_db()
+        if synapses is not None:
+            synapse_documents = [self.__generate_synapse(**synapse) for synapse in synapses]
+            synapse_collection = db["synapses"]
+            synapse_collection.insert_many(synapse_documents)
+        if skeletons is not None:
+            skeleton_documents = [self.__generate_skeleton(**skeleton) for skeleton in skeletons]
+            skeleton_collection = db["skeletons"]
+            skeleton_collection.insert_many(skeleton_documents)
+        if hemi_lineages is not None:
+            hemi_lineage_documents = [self.__generate_hemi_lineage(**hemi_lineage) for hemi_lineage in hemi_lineages]
+            hemi_lineage_collection = db["hemi_lineages"]
+            hemi_lineage_collection.insert_many(hemi_lineage_documents)
+        if metas is not None:
+            meta_documents = [self.__generate_meta(**meta) for meta in metas]
+            meta_collection = db["meta"]
+            meta_collection.insert_many(meta_documents)
 
     def validate_synapses(self):
         db = self.__get_db()
@@ -379,6 +421,8 @@ class SynisterDb(object):
                                               projection=['skeleton_id'])
             nt_skeleton_ids = list(n['skeleton_id'] for n in result)
 
+
+
             # intersect with skeleton_ids
             if skeleton_ids is None:
                 skeleton_ids = nt_skeleton_ids
@@ -402,20 +446,34 @@ class SynisterDb(object):
 
         synapse_collection = db['synapses']
         query = {"$and": [q for q in query]}
-        result = synapse_collection.find(query)
 
-        synapses = {
-            synapse['synapse_id']: {
-                k: synapse[k]
-                for k in [
-                    'x', 'y', 'z',
-                    'skeleton_id',
-                    'brain_region',
-                    'splits'
-                ]
+        try:
+            result = synapse_collection.find(query)
+            synapses = {
+                synapse['synapse_id']: {
+                    k: synapse[k]
+                    for k in [
+                        'x', 'y', 'z',
+                        'skeleton_id',
+                        'brain_region',
+                        'splits'
+                    ]
+                }
+                for synapse in result
             }
-            for synapse in result
-        }
+        except KeyError:
+            result = synapse_collection.find(query)
+            synapses = {
+                synapse['synapse_id']: {
+                    k: synapse[k]
+                    for k in [
+                        'x', 'y', 'z',
+                        'skeleton_id',
+                        'splits'
+                    ]
+                }
+                for synapse in result
+            }
 
         return synapses
 
@@ -500,7 +558,7 @@ class SynisterDb(object):
         skeletons = {
             skeleton['skeleton_id']: {
                 'hemi_lineage_id': skeleton['hemi_lineage_id'],
-                'nt_known': tuple(sorted(skeleton['nt_known']))
+                'nt_known': tuple(sorted(skeleton['nt_known'])) if skeleton['nt_known'] is not None else skeleton["nt_known"]
             }
             for skeleton in result
         }
@@ -514,10 +572,10 @@ class SynisterDb(object):
 
         hemi_lineage_collection = db["hemi_lineages"]
         result = hemi_lineage_collection.find({})
-        
+
         hemi_lineages = {
                 hl["hemi_lineage_id"]: {
-                    "nt_guess": tuple(sorted(hl["nt_guess"])), 
+                    "nt_guess": tuple(sorted(hl['nt_guess'])) if hl['nt_guess'] is not None else hl["nt_guess"],
                     "hemi_lineage_name": self.__consolidate_unknown(hl["hemi_lineage_name"])
                 }
                 for hl in result
@@ -643,6 +701,12 @@ class SynisterDb(object):
 
         return done, total
 
+    def init_splits(self):
+        db = self.__get_db()
+        synapse_collection = db["synapses"]
+
+        synapse_collection.update_many({}, {"$set": {"splits": {}}})
+
     def make_split(self,
                    split_name,
                    train_synapse_ids,
@@ -653,7 +717,7 @@ class SynisterDb(object):
  
         db = self.__get_db()
         synapse_collection = db["synapses"]
-         
+
         synapse_collection.update_many({"synapse_id": {"$in": train_synapse_ids}},
                              {"$set": {"splits.{}".format(split_name): "train"}})
 
@@ -689,3 +753,12 @@ class SynisterDb(object):
     def destroy_queryable(self, queryable):
         db = self.__get_db("queryable")
         db.drop_collection(queryable)
+
+    def update_synapse(self,
+                       synapse_id,
+                       key,
+                       value):
+        db = self.__get_db()
+        synapses = db["synapses"]
+        synapses.update_one({"synapse_id": synapse_id},
+                            {"$set": {key: value}})
