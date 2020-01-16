@@ -2,11 +2,11 @@ from gunpowder import *
 from synister.synister_db import SynisterDb
 import numpy as np
 
-class SynapseSourceMongo(CsvPointsSource):
+class SynapseBrainRegionSourceMongo(CsvPointsSource):
     def __init__(self, db_credentials, 
                        db_name, 
                        split_name, 
-                       synapse_type, 
+                       brain_region_id, 
                        points,
                        points_spec=None, 
                        scale=None):
@@ -14,16 +14,15 @@ class SynapseSourceMongo(CsvPointsSource):
         self.db = SynisterDb(db_credentials, db_name)
         self.split_name = split_name
         self.db_name = db_name
-        self.synapse_type = synapse_type
-        super(SynapseSourceMongo, self).__init__(filename=None,
-                                                 points=points,
-                                                 points_spec=points_spec,
-                                                 scale=scale)
+        self.brain_region_id = brain_region_id
+        super(SynapseBrainRegionSourceMongo, self).__init__(filename=None,
+                                                            points=points,
+                                                            points_spec=points_spec,
+                                                            scale=scale)
 
     def _read_points(self):
         print("Reading split {} from db {}".format(self.split_name, self.db_name))
-        synapses = self.db.get_synapses(neurotransmitters=self.synapse_type,
-                                        split_name=self.split_name)
+        synapses = self.db.get_synapses(split_name=self.split_name)
 
         points = np.array([
                             [
@@ -33,16 +32,18 @@ class SynapseSourceMongo(CsvPointsSource):
                                 
                             ]
                         for synapse in synapses.values()
-                        if synapse["splits"][self.split_name] == "train"
+                        if (synapse["splits"][self.split_name] == "train"
+                            and len(synapse["brain_region"]) == 1 
+                            and synapse["brain_region"][0] == self.brain_region_id)
                         ])
 
         self.data = points
         self.ndims = 3
 
-class SynapseTypeSource(BatchProvider):
-    def __init__(self, synapse_types, synapse_type, array):
-        n = len(synapse_types)
-        i = synapse_types.index(synapse_type)
+class BrainRegionIdSource(BatchProvider):
+    def __init__(self, brain_region_ids, brain_region_id, array):
+        n = len(brain_region_ids)
+        i = brain_region_ids.index(brain_region_id)
 
         self.label = np.int64(i)
         self.array = array
@@ -63,12 +64,12 @@ class SynapseTypeSource(BatchProvider):
 
         return batch
 
+
 class InspectLabels(BatchFilter):
-    def __init__(self, synapse_type, pred_synapse_type):
-        self.synapse_type = synapse_type
-        self.pred_synapse_type = pred_synapse_type
+    def __init__(self, brain_region_id, pred_brain_region_id):
+        self.brain_region_id = brain_region_id
+        self.pred_brain_region_id = pred_brain_region_id
 
     def process(self, batch, request):
-        print("label     :", batch[self.synapse_type].data)
-        print("prediction:", batch[self.pred_synapse_type].data)
-
+        print("label     :", batch[self.brain_region_id].data)
+        print("prediction:", batch[self.pred_brain_region_id].data)

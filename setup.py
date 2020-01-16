@@ -7,5 +7,8 @@ setup(
     url='https://github.com/funkelab/synister',
     author='Funkelab',
     packages=[
-        'synister'
+        'synister',
+        'synister.skeleton_network',
+        'synister.hemi_lineage_network',
+        'synister.brain_region_network'
         ])
