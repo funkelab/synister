@@ -140,6 +140,7 @@ pip install mahotas
 pip install pymongo
 pip install opencv-python
 pip install tensorboardX
+pip install iteration_utilities
 
 %environment
 export MALIS_ROOT=/src/malis
