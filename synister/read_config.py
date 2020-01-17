@@ -40,6 +40,7 @@ def read_predict_config(predict_config):
     for factor in downsample_factors:
         f = tuple([int(k) for k in factor])
         cfg_dict["downsample_factors"].append(f)
+    cfg_dict["overwrite"] = config.get("Predict", "overwrite") == "True"
 
     return cfg_dict
 

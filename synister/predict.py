@@ -21,7 +21,9 @@ db = SynisterDb(predict_config["db_credentials"],
 db.initialize_prediction(predict_config["split_name"],
                          predict_config["experiment"],
                          predict_config["train_number"],
-                         predict_config["predict_number"])
+                         predict_config["predict_number"],
+                         overwrite=predict_config["overwrite"],
+                         validation=predict_config["split_part"] == "validation")
 
 def monitor_prediction(predict_config,
                        interval=60):
@@ -41,6 +43,7 @@ def monitor_prediction(predict_config,
         time_elapsed = time.time() - start
         if done - done_0 > 0:
             eta = time_elapsed/(done - done_0) * (total - done)
+            sps = (done - done_0)/time_elapsed
         else:
             eta = "NA"
             sps = "NA"

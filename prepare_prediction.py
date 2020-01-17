@@ -15,6 +15,7 @@ p.add('-e', required=True, help='name of the experiment, e.g. fafb, defaults to 
 p.add('-t', required=True, help='train setup number to use for this prediction')
 p.add('-i', required=True, help='iteration checkpoint number to use for this prediction')
 p.add('-p', required=True, help='predict number/id to use for this prediction')
+p.add('-v', required=False, action='store_true', help='use validation split part')
 p.add('-c', required=False, action='store_true', help='clean up - remove specified predict setup')
 
 
@@ -23,7 +24,8 @@ def set_up_environment(base_dir,
                        train_number,
                        iteration,
                        predict_number,
-                       clean_up):
+                       clean_up,
+                       validation):
 
     predict_setup_dir = os.path.join(os.path.join(base_dir, experiment), "03_predict/setup_t{}_p{}".format(train_number, predict_number))
     train_setup_dir = os.path.join(os.path.join(base_dir, experiment), "02_train/setup_t{}".format(train_number))
@@ -65,7 +67,8 @@ def set_up_environment(base_dir,
                                            train_number,
                                            predict_number,
                                            train_checkpoint,
-                                           train_config_dict)
+                                           train_config_dict,
+                                           validation)
 
     with open(os.path.join(predict_setup_dir, "predict_config.ini"), "w+") as f:
         predict_config.write(f)
@@ -75,7 +78,8 @@ def create_predict_config(base_dir,
                           train_number,
                           predict_number,
                           train_checkpoint,
-                          train_config_dict):
+                          train_config_dict,
+                          validation):
 
     config = configparser.ConfigParser()
 
@@ -105,7 +109,12 @@ def create_predict_config(base_dir,
     config.set('Predict', 'raw_container', str(train_config_dict["raw_container"]))
     config.set('Predict', 'raw_dataset', str(train_config_dict["raw_dataset"]))
     config.set('Predict', 'downsample_factors', str(train_config_dict["downsample_factors"])[1:-1])
-    config.set('Predict', 'split_part', "test")
+    if validation:
+        config.set('Predict', 'split_part', "validation")
+    else:
+        config.set('Predict', 'split_part', "test")
+    config.set('Predict', 'overwrite', str(False))
+
     return config
  
 
@@ -118,10 +127,12 @@ if __name__ == "__main__":
     train_iteration = int(options.i)
     predict_number = int(options.p)
     clean_up = bool(options.c)
+    validation = bool(options.v)
 
     set_up_environment(base_dir,
                        experiment,
                        train_number,
                        train_iteration,
                        predict_number,
-                       clean_up)
+                       clean_up,
+                       validation)
