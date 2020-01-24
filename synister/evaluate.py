@@ -211,7 +211,7 @@ def plot_confusion_matrix(heatmap_values, predict_cfg,
             name = "_" + name
         plt.savefig("confusion_matrix_t{}_i{}{}".format(train_number, iteration, name))
 
-def find_accuracy(confusion_matrix):                         
+def get_accuracy(confusion_matrix):                         
     #returns a tuple (overall accuracy, average accuracy)
     diagonal = np.diagonal(confusion_matrix)
     correct = np.sum(diagonal)
