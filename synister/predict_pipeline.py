@@ -11,7 +11,7 @@ import multiprocessing
 import sys
 
 logger = logging.getLogger(__name__)
-
+self_path = os.path.realpath(os.path.dirname(__file__))
 
 def test(worker_id,
          train_checkpoint,
@@ -32,6 +32,7 @@ def test(worker_id,
          num_cache_workers,
          num_block_workers,
          split_part="test",
+         output_classes=None,
          **kwargs):
 
     if not split_part in ["validation", "test"]:
@@ -141,8 +142,8 @@ if __name__ == "__main__":
     worker_id = int(sys.argv[1])
     num_block_workers = int(sys.argv[2])
 
-    predict_config = read_predict_config("./predict_config.ini")
-    worker_config = read_worker_config("./worker_config.ini")
+    predict_config = read_predict_config(os.path.join(self_path, "predict_config.ini"))
+    worker_config = read_worker_config(os.path.join(self_path, "worker_config.ini"))
     worker_config["worker_id"] = worker_id
     worker_config["num_block_workers"] = num_block_workers
     test(**{**predict_config, **worker_config})
