@@ -8,10 +8,12 @@ import threading
 from synister.synister_db import SynisterDb
 import time
 
-worker_config = read_worker_config("worker_config.ini")
-predict_config = read_predict_config("predict_config.ini")
+self_path = os.path.realpath(os.path.dirname(__file__))
 
-base_cmd = "python {}".format("predict_pipeline.py")
+worker_config = read_worker_config(os.path.join(self_path, "worker_config.ini"))
+predict_config = read_predict_config(os.path.join(self_path, "predict_config.ini"))
+
+base_cmd = "python {}".format(os.path.join(self_path, "predict_pipeline.py"))
 
 num_block_workers = worker_config["num_block_workers"]
 
@@ -34,7 +36,9 @@ def monitor_prediction(predict_config,
                                      predict_config["train_number"],
                                      predict_config["predict_number"])
     start = time.time()
-    while True:
+    done_interval = []
+    exit = False
+    while not exit:
         done, total = db.count_predictions(predict_config["split_name"],
                                            predict_config["experiment"],
                                            predict_config["train_number"],
@@ -51,6 +55,11 @@ def monitor_prediction(predict_config,
         print("Time elapsed {}".format(time_elapsed))
         print("{} samples/second".format(sps))
         print("ETA: {}".format(eta))
+        done_interval.append(done)
+        if len(done_interval) > 5:
+            if done_interval[-1] == done_interval[-2] == done_interval[-3] == done_interval[-4]:
+                exit = True
+
         time.sleep(interval)
 
 if worker_config["singularity_container"] != "None" and worker_config["queue"] == "None":
