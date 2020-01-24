@@ -18,13 +18,6 @@ def parse_prediction(db_credentials,
                                      predict_cfg["train_number"],
                                      predict_cfg["predict_number"])
 
-    # Read split always from refactor,
-    # This ensures backwards compatibility 
-    # with v2:
-    if not predict_cfg["db_name_data"] == "synister_v3":
-        if predict_cfg["train_number"] < 19:
-            db = SynisterDb(db_credentials, "synister_v2_refactor")
-
     synapses = db.get_synapses()
     skeletons = db.get_skeletons()
 
