@@ -28,13 +28,23 @@ def train_until(max_iteration,
                 output_classes=None,
                 **kwargs):
 
+    if output_classes is None:
+        output_classes = len(skeleton_ids)
+
+
     db = SynisterDb(db_credentials, db_name_data)
     synapses_in_split = db.get_synapses(split_name=split_name)
-    skeleton_ids = list(set([synapse["skeleton_id"] for synapse_id, synapse in synapses_in_split.items() if synapse["splits"][split_name] == "train"]))
 
-    # Remove out of bounds skeleton
-    skeleton_ids.remove(2130631)
+    synapses_per_skeleton = {}
+    for synapse_id, synapse in synapses_in_split.items():
+        skid = synapse["skeleton_id"]
+        if synapse["splits"][split_name] == "train":
+            if not skid in list(synapses_per_skeleton.keys()):
+                synapses_per_skeleton[skid] = [synapse_id]
+            else:
+                synapses_per_skeleton[skid].append(synapse_id)
 
+    skeleton_ids = [skid for skid, synapses in synapses_per_skeleton.items() if len(synapses) > 100]
 
     if output_classes is None:
         output_classes = len(skeleton_ids)

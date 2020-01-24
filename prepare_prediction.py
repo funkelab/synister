@@ -7,6 +7,7 @@ import configargparse
 import configparser
 from os.path import expanduser
 import click
+import numpy as np
 from synister.read_config import read_train_config, read_predict_config
 
 
@@ -17,13 +18,20 @@ p.add('-t', required=True, help='train setup number to use for this prediction')
 p.add('-i', nargs="+",required=True, help='iterations to use for validation')
 p.add('-v', required=False, action='store_true', help='use validation split part')
 p.add('-c', required=False, action='store_true', help='clean up - remove specified predict setup')
+p.add('-s', required=False, action='store_true', help='create a skeleton predict setup')
+p.add('-l', required=False, action='store_true', help='create a hemi_lineage predict setup')
+p.add('-b', required=False, action='store_true', help='create a brain_region predict setup')
+this_dir = os.path.dirname(__file__)
 
 def set_up_environments(base_dir,
                         experiment,
                         train_number,
                         iterations,
                         clean_up,
-                        validation):
+                        validation,
+                        skeleton,
+                        hemi_lineage,
+                        brain_region):
 
     #predict_setup_dir = os.path.join(os.path.join(base_dir, experiment), "03_predict/setup_t{}_p{}".format(train_number, predict_number))
     predict_setup_dir = os.path.join(os.path.join(base_dir, experiment), "03_predict")
@@ -43,7 +51,10 @@ def set_up_environments(base_dir,
             if i_cfg in iterations:
                 collisions[i_cfg] = cfg["predict_number"]
 
-    predict_number_new = max(existing_predict_numbers) + 1
+    if existing_predict_numbers:
+        predict_number_new = max(existing_predict_numbers) + 1
+    else:
+        predict_number_new = 0
     for iteration in iterations:
         if collisions[iteration] is not None:
             predict_number = collisions[iteration]
@@ -57,7 +68,10 @@ def set_up_environments(base_dir,
                            iteration,
                            predict_number,
                            clean_up,
-                           validation)
+                           validation,
+                           skeleton,
+                           hemi_lineage,
+                           brain_region)
 
         if collisions[iteration] is None:
             predict_number_new += 1
@@ -68,7 +82,10 @@ def set_up_environment(base_dir,
                        iteration,
                        predict_number,
                        clean_up,
-                       validation):
+                       validation,
+                       skeleton,
+                       hemi_lineage,
+                       brain_region):
 
     predict_setup_dir = os.path.join(os.path.join(base_dir, experiment), "03_predict/setup_t{}_p{}".format(train_number, predict_number))
     train_setup_dir = os.path.join(os.path.join(base_dir, experiment), "02_train/setup_t{}".format(train_number))
@@ -100,7 +117,17 @@ def set_up_environment(base_dir,
             else:
                 raise ValueError("Predict setup exists already, choose different predict number or clean up.")
 
-        copyfile("synister/predict_pipeline.py", os.path.join(predict_setup_dir, "predict_pipeline.py"))
+        if np.sum([skeleton, hemi_lineage, brain_region]) > 1:
+            raise ValueError("Select either skeleton, brain_region or hemi_lineage setup or none")
+        if skeleton:
+            copyfile(os.path.join(this_dir, "synister/skeleton_network/predict_pipeline.py"), os.path.join(predict_setup_dir, "predict_pipeline.py"))
+        elif hemi_lineage:
+            copyfile(os.path.join(this_dir, "synister/hemi_lineage_network/predict_pipeline.py"), os.path.join(predict_setup_dir, "predict_pipeline.py"))
+        elif brain_region:
+            copyfile(os.path.join(this_dir, "synister/brain_region_network/predict_pipeline.py"), os.path.join(predict_setup_dir, "predict_pipeline.py"))
+        else:
+            copyfile(os.path.join(this_dir, "synister/predict_pipeline.py"), os.path.join(predict_setup_dir, "predict_pipeline.py"))
+
         copyfile("synister/predict.py", os.path.join(predict_setup_dir, "predict.py"))
         copyfile(train_worker_config, os.path.join(predict_setup_dir, "worker_config.ini"))
      
@@ -161,7 +188,6 @@ def create_predict_config(base_dir,
 
     return config
  
-
 if __name__ == "__main__":
     options = p.parse_args()
 
@@ -171,10 +197,15 @@ if __name__ == "__main__":
     train_iterations = [int(i) for i in options.i]
     clean_up = bool(options.c)
     validation = bool(options.v)
-
+    skeleton = bool(options.s)
+    hemi_lineage = bool(options.l)
+    brain_region = bool(options.b)
     set_up_environments(base_dir,
                        experiment,
                        train_number,
                        train_iterations,
                        clean_up,
-                       validation)
+                       validation,
+                       skeleton,
+                       hemi_lineage,
+                       brain_region)

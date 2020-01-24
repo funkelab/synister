@@ -37,6 +37,12 @@ def train_until(max_iteration,
     skeletons_in_split = db.get_skeletons(skeleton_ids=skeleton_ids)
     hemi_lineage_ids = list(set([skeleton["hemi_lineage_id"] for skeleton_id, skeleton in skeletons_in_split.items()]))
 
+    synapses_per_hemi_lineage = {}
+    for hl_id in hemi_lineage_ids:
+        synapses_per_hemi_lineage[hl_id] = [synapse_id for synapse_id, synapse in db.get_synapses(hemi_lineage_id=hl_id, split_name=split_name).items() if synapse["splits"][split_name] == "train"]
+
+    hemi_lineage_ids = [hl_id for hl_id in hemi_lineage_ids if len(synapses_per_hemi_lineage[hl_id]) > 10]
+
     if output_classes is None:
         output_classes = len(hemi_lineage_ids)
 
