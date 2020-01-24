@@ -20,11 +20,16 @@ def predict(raw_batched,
 def init_vgg(checkpoint_file,
              input_shape,
              fmaps,
-             downsample_factors=[(2,2,2), (2,2,2), (2,2,2), (2,2,2)]):
+             downsample_factors=[(2,2,2), (2,2,2), (2,2,2), (2,2,2)],
+             output_classes=None):
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    if output_classes is None:
+        output_classes = 6
+
     model = Vgg3D(input_size=input_shape, fmaps=fmaps,
-                  downsample_factors=downsample_factors)
+                  downsample_factors=downsample_factors,
+                  output_classes=output_classes)
     model.to(device)
     logger.info("Init vgg with checkpoint {}".format(checkpoint_file))
     checkpoint = torch.load(checkpoint_file)
