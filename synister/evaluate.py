@@ -119,17 +119,32 @@ def expected_probability_matrix(synapses, predict_config):
 
     return confusion_matrix
 
-def synaptic_confusion_matrix(synapses, predict_config, normalization_factor=None, normalize=False):
+def synaptic_confusion_matrix(synapses, predict_config, normalization_factor=None, normalize=False, n_min=None):
     synapse_types = predict_config["synapse_types"]
     cm = np.zeros([len(synapse_types)] * 2, dtype=float)
 
     if normalization_factor is None:
         normalization_factor = {synapse_id: 1. for synapse_id in synapses}
 
+    if not n_min is None:
+        synapses_per_skeleton = {}
+        for synapse_id, synapse_data in synapses.items():
+            skid = synapse_data["skeleton_id"]  
+            if not skid in synapses_per_skeleton:
+                synapses_per_skeleton[skid] = [synapse_id]
+            else:
+                synapses_per_skeleton[skid].append(synapse_id)
+
+
     n = 0
     for synapse_id, synapse_data in synapses.items():
         if synapse_data["prediction"] == "null":
             continue
+
+        if not n_min is None:
+            if len(synapses_per_skeleton[synapse_data["skeleton_id"]]) < n_min:
+                continue
+
         nt_known = synapse_data["nt_known"]
         if len(nt_known)>1:
             raise Warning("More than one known nt")
@@ -147,13 +162,28 @@ def synaptic_confusion_matrix(synapses, predict_config, normalization_factor=Non
 
     return cm
 
-def skeleton_confusion_matrix(synapses, predict_config, normalize=False):
+def skeleton_confusion_matrix(synapses, predict_config, normalize=False, n_min=None):
     synapse_types = predict_config["synapse_types"]
     cm = np.zeros([len(synapse_types)] * 2, dtype=float)
     skeleton_ids = set([s["skeleton_id"] for s in synapses.values()])
     skeleton_to_prediction = {skid: [] for skid in skeleton_ids}
+
+    if not n_min is None:
+        synapses_per_skeleton = {}
+        for synapse_id, synapse_data in synapses.items():
+            skid = synapse_data["skeleton_id"]  
+
+            if not skid in synapses_per_skeleton:
+                synapses_per_skeleton[skid] = [synapse_id]
+            else:
+                synapses_per_skeleton[skid].append(synapse_id)
+
     skeleton_to_gt = {}
     for synapse_id, synapse_data in synapses.items():
+        if not n_min is None:
+            if len(synapses_per_skeleton[synapse_data["skeleton_id"]]) < n_min:
+                continue
+
         zeros = np.zeros(len(synapse_types))
         arg_max = np.argmax(synapse_data["prediction"])
         zeros[arg_max] = 1
@@ -162,8 +192,11 @@ def skeleton_confusion_matrix(synapses, predict_config, normalize=False):
         skeleton_to_gt[synapse_data["skeleton_id"]] =\
                 synapse_types.index(synapse_data["nt_known"][0])
 
-
     for skeleton_id, predictions in skeleton_to_prediction.items():
+        if not n_min is None:
+            if len(synapses_per_skeleton[skeleton_id]) < n_min:
+                continue
+
         majority_vote = np.argmax(np.sum(np.array(predictions), axis=0))
         cm[skeleton_to_gt[skeleton_id], majority_vote] += 1
 
