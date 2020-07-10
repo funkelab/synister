@@ -154,9 +154,6 @@ class WritePredictionsTestCase(DbSetupTestCase):
                                       train_number=0,
                                       predict_number=0)
 
-        n_updated = [doc for doc in predict_collection.find({"prediction": {"$ne": None}})]
-        self.assertTrue(len(n_updated) == 0)
- 
 class CountPredictionsTestCase(DbSetupTestCase):
     def runTest(self):
         self.db.initialize_prediction(split_name="neuron",
