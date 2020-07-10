@@ -82,16 +82,3 @@ def get_catmaid_neurotransmitters(skids, output_dir):
         out_file = os.path.join(output_dir, "skid_{}.json".format(skid))
         with open(out_file, "w+") as f:
             json.dump(nt_probabilities, f)
-
-if __name__ == "__main__":
-    get_catmaid_neurotransmitters([829827, 2891306, 3077882, 3085783, 5157807, 8540881, 3601125, 3755537, 3821611, 3871868, 6097229, 7276604], 
-                                  "/groups/funke/home/ecksteinn/Projects/other/synister_data/dacks")
-
-    """
-    get_catmaid_neurotransmitters([3601125, 3755537, 3821611, 3871868, 6097229, 7276604], 
-                                  "/groups/funke/home/ecksteinn/Projects/other/synister_data/dachs")
-    """
-    """
-    get_catmaid_neurotransmitters([13070081, 6384010, 12138520, 13794770, 7928068], 
-                                  "/groups/funke/home/ecksteinn/Projects/other/synister_data/bates")
-    """
