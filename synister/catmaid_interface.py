@@ -55,3 +55,12 @@ class Catmaid(object):
         volumes = pymaid.in_volume(x=positions,
                                    volume=self.volumes)
         return volumes
+
+    def get_synapse_positions(self, skid):
+        neuron = pymaid.get_neuron(skid)
+
+        connectors = neuron.connectors
+        x = connectors["x"].to_numpy()
+        y = connectors["y"].to_numpy()
+        z = connectors["z"].to_numpy()
+        return np.vstack([z,y,x]).T, connectors["connector_id"].to_numpy()
