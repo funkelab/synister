@@ -32,7 +32,7 @@ def init_vgg(checkpoint_file,
                   output_classes=output_classes)
     model.to(device)
     logger.info("Init vgg with checkpoint {}".format(checkpoint_file))
-    checkpoint = torch.load(checkpoint_file)
+    checkpoint = torch.load(checkpoint_file, map_location=device)
     model.load_state_dict(checkpoint['model_state_dict'])
     return model
 
