@@ -57,9 +57,7 @@ class Catmaid(object):
         return volumes
 
     def get_synapse_positions(self, skid):
-        neuron = pymaid.get_neuron(skid)
-
-        connectors = neuron.connectors
+        connectors = pymaid.get_connectors(skid, relation_type='presynaptic_to')
         x = connectors["x"].to_numpy()
         y = connectors["y"].to_numpy()
         z = connectors["z"].to_numpy()
