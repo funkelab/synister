@@ -10,7 +10,7 @@ import zarr
 
 def init_model():
     # Current model trained on all annotated synapses:
-    train_checkpoint = "/nrs/funke/ecksteinn/synister_experiments/fafb_v3/02_train/setup_t8/model_checkpoint_300000"
+    train_checkpoint = "model_checkpoint_fafb_v3_t8_c300000"
     input_shape = (16,160,160)
     fmaps = 12
     downsample_factors = [(1, 2, 2), (1, 2, 2), (1, 2, 2), (2, 2, 2)]
