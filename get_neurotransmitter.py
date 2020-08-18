@@ -1,11 +1,12 @@
-import numpy as np
-import json
-from synister.utils import init_vgg, predict, get_raw
 from synister.catmaid_interface import Catmaid
+from synister.utils import init_vgg, predict, get_raw
+from tqdm import tqdm
+import json
+import numpy as np
 import os
+import pandas
 import sys
 import time
-import pandas
 import zarr
 
 def init_model():
@@ -65,7 +66,7 @@ def get_neurotransmitter(positions,
         os.makedirs(batch_output_dir)
 
     nt_probabilities = []
-    for i in range(0, len(positions), batch_size):
+    for i in tqdm(range(0, len(positions), batch_size)):
         batched_positions = positions[i:i+batch_size]
         raw, raw_normalized = get_raw(batched_positions,
                                       input_shape,
