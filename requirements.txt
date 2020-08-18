@@ -8,6 +8,8 @@ ConfigArgParse
 pymongo
 tensorflow
 iteration_utilities
+gunpowder==1.1.1
+pymaid
 tqdm
 -e git+https://github.com/funkey/numcodecs.git@f950047d7b666723f81006cbdfd82c0e6705c39c#egg=numcodecs
 -e git+https://github.com/funkey/zarr.git@9ddf849a6e3329f5ff361ebf6156712926e2fdfe#egg=zarr
@@ -16,5 +18,4 @@ tqdm
 -e git+https://github.com/funkelab/funlib.learn.torch.git@master#egg=funlib.learn.torch
 -e git+https://github.com/funkelab/funlib.show.neuroglancer.git@master#egg=funlib.show.neuroglancer
 -e git+https://github.com/funkelab/funlib.math.git@master#egg=funlib.math
--e git+https://github.com/funkey/gunpowder.git@v1.1-dev#egg=gunpowder
 -e git+https://github.com/funkelab/funlib.run.git@master#egg=funlib.run
