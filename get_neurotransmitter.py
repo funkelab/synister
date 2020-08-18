@@ -51,7 +51,7 @@ def get_neurotransmitter(positions,
     neurotransmitter_list = model_config["neurotransmitter_list"]
     input_shape = model_config["input_shape"]
     output_classes = model_config["output_classes"]
-    batch_size = 8
+    batch_size = 24
 
     # Disable Dropout, Batch norm etc.
     model.eval()
