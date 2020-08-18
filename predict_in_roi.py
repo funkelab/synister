@@ -60,16 +60,10 @@ if __name__ == '__main__':
     center = center//step * step
     context = np.array(args.context) * step
 
-    # center = np.array([217400, 164242, 438817])
-
-    # step = np.array([80, 40, 40])
-    # center = center//step * step
-    # context = np.array([2, 100, 100]) * step
-
     f = zarr.open(args.out)
 
     predictions = predict_in_roi(center - context, center + context, step)
 
-    # f['prediction'] = predictions
-    # f['prediction'].attrs['offset'] = list(int(x) for x in center - context)
-    # f['prediction'].attrs['resolution'] = list(int(x) for x in step)
+    f['prediction'] = predictions
+    f['prediction'].attrs['offset'] = list(int(x) for x in center - context)
+    f['prediction'].attrs['resolution'] = list(int(x) for x in step)
