@@ -84,7 +84,7 @@ def get_raw(locs,
             roi.set_shape(size_nm)
 
         if not dataset.roi.contains(roi):
-            logger.WARNING("Location %s is not fully contained in dataset" % loc)
+            logger.warning("Location %s is not fully contained in dataset" % loc)
             return
 
         raw.append(dataset[roi].to_ndarray())
