@@ -91,17 +91,16 @@ def get_raw_parallel(locs,
     return raw, raw_normalized
 
 def get_raw(locs,
-                size,
-                voxel_size,
-                data_container,
-                data_set):
+            size,
+            voxel_size,
+            data_container,
+            data_set):
     """
     Get raw crops from the specified
     dataset.
     locs(``list of tuple of ints``):
         list of centers of location of interest
     size(``tuple of ints``):
-        
         size of cropout in voxel
     voxel_size(``tuple of ints``):
         size of a voxel
@@ -137,6 +136,48 @@ def get_raw(locs,
     raw_normalized = raw/255.0
     raw_normalized = raw_normalized*2.0 - 1.0
     return raw, raw_normalized
+
+def get_array(data_container,
+              data_set,
+              begin,
+              end,
+              context=(0,0,0)):
+
+    context = np.array(context)
+    roi = daisy.Roi(begin - context/2, 
+                    end - begin + context)
+    dataset = daisy.open_ds(data_container,
+                            data_set)
+    data_array = dataset[roi].to_ndarray()
+    return data_array
+
+def get_raw_dense(locs,
+                  size,
+                  data_array,
+                  data_array_offset,
+                  voxel_size):
+    """
+    Get raw crops from the specified
+    data array.
+    locs(``list of tuple of ints``):
+        list of centers of location of interest
+    """
+
+    locs = [(l-data_array_offset)/voxel_size + np.array(size)/2 for l in locs]
+
+    raw = []
+    for loc in locs:
+        loc = np.array(loc)
+        raw.append(data_array[int(loc[0] - size[0]/2):int(loc[0] + size[0]/2),
+                              int(loc[1] - size[1]/2):int(loc[1] + size[1]/2),
+                              int(loc[2] - size[2]/2):int(loc[2] + size[2]/2)])
+
+    raw = np.stack(raw)
+    raw = raw.astype(np.float32)
+    raw_normalized = raw/255.0
+    raw_normalized = raw_normalized*2.0 - 1.0
+    return raw, raw_normalized
+
 
 def fetch_from_ds(dataset, loc, voxel_size, size, size_nm):
     loc = daisy.Coordinate(tuple(loc))

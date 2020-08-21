@@ -1,5 +1,5 @@
 from synister.catmaid_interface import Catmaid
-from synister.utils import init_vgg, predict, get_raw
+from synister.utils import init_vgg, predict, get_raw, get_raw_dense
 from tqdm import tqdm
 import json
 import numpy as np
@@ -15,7 +15,8 @@ def init_model():
     input_shape = (16,160,160)
     fmaps = 12
     downsample_factors = [(1, 2, 2), (1, 2, 2), (1, 2, 2), (2, 2, 2)]
-    neurotransmitter_list = ["gaba", "acetylcholine", "glutamate", "serotonin", "octopamine", "dopamine"]
+    neurotransmitter_list = ["gaba", "acetylcholine", "glutamate", 
+                             "serotonin", "octopamine", "dopamine"]
     output_classes = len(neurotransmitter_list)
 
     # Initialize model
@@ -38,8 +39,10 @@ def get_neurotransmitter(positions,
                          model, 
                          model_config, 
                          predict_id=0, 
-                         save_batches=100, 
-                         output_dir="."):
+                         save_batches=1000, 
+                         output_dir=".",
+                         data_array=None,
+                         data_array_offset=(0,0,0)):
     """
     positions `list of array-like of ints`:
         Synaptic postions in fafb v14 [(z0,y0,x0), (z1, y1, x1), ...]
@@ -68,14 +71,22 @@ def get_neurotransmitter(positions,
     nt_probabilities = []
     for i in tqdm(range(0, len(positions), batch_size)):
         batched_positions = positions[i:i+batch_size]
-        raw, raw_normalized = get_raw(batched_positions,
-                                      input_shape,
-                                      voxel_size,
-                                      raw_container,
-                                      raw_dataset)
+        if data_array is None:
+            raw, raw_normalized = get_raw(batched_positions,
+                                          input_shape,
+                                          voxel_size,
+                                          raw_container,
+                                          raw_dataset)
+        else:
+            raw, raw_normalized = get_raw_dense(batched_positions,
+                                                input_shape,
+                                                data_array,
+                                                data_array_offset,
+                                                voxel_size)
 
         if i % save_batches == 0:
-            zarr.save(batch_output_dir + '/batch_{}_{}.zarr'.format(predict_id, i), 
+            zarr.save(batch_output_dir +\
+                      '/batch_{}_{}.zarr'.format(predict_id, i), 
                       raw_normalized)
 
         output = predict(raw_normalized, model)
