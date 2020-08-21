@@ -11,6 +11,7 @@ class Catmaid(object):
         self.credentials = credentials
         self.instance = self.__get_instance(self.credentials)
         self.volumes = self.__get_volumes()
+        pymaid.clear_cache()
 
     def __get_instance(self, credentials):
         with open(credentials) as fp:
