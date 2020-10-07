@@ -162,7 +162,7 @@ def synaptic_confusion_matrix(synapses, predict_config, normalization_factor=Non
 
     return cm
 
-def skeleton_confusion_matrix(synapses, predict_config, normalize=False, n_min=None):
+def skeleton_confusion_matrix(synapses, predict_config, normalize=False, n_min=None, cutoff=None):
     synapse_types = predict_config["synapse_types"]
     cm = np.zeros([len(synapse_types)] * 2, dtype=float)
     skeleton_ids = set([s["skeleton_id"] for s in synapses.values()])
@@ -196,8 +196,17 @@ def skeleton_confusion_matrix(synapses, predict_config, normalize=False, n_min=N
         if not n_min is None:
             if len(synapses_per_skeleton[skeleton_id]) < n_min:
                 continue
-
         majority_vote = np.argmax(np.sum(np.array(predictions), axis=0))
+
+        if cutoff is not None:
+            gt_transmitter = skeleton_to_gt[skeleton_id]
+            majority_vote = np.argmax(np.sum(np.array(predictions), axis=0))
+            n_majority_vote = np.sum([p[majority_vote] for p in predictions])
+            n_tot = np.sum([1 for p in predictions])
+            p_major = n_majority_vote/float(n_tot)
+            if p_major < cutoff:
+                continue
+
         cm[skeleton_to_gt[skeleton_id], majority_vote] += 1
 
     if normalize:
