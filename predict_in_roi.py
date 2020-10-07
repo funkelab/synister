@@ -80,7 +80,9 @@ if __name__ == '__main__':
 
     f = zarr.open(args.out)
     
-    predictions = predict_in_roi(center - context, center + context, step)
+    predictions = predict_in_roi(center - context, 
+                                 center + context, 
+                                 step)
 
     f['prediction'] = predictions
     f['prediction'].attrs['offset'] = list(int(x) for x in center - context)
