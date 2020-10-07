@@ -76,7 +76,7 @@ class SynisterDb(object):
         db = client[db_name]
         return db
 
-    def __generate_synapse(self, x, y, z, synapse_id, skeleton_id, prepost=None, meta_id=None):
+    def __generate_synapse(self, x, y, z, synapse_id, skeleton_id, prepost=None, meta_id=None, treenode_id=None, label=None):
         synapse = deepcopy(self.synapse)
         synapse["x"] = x
         synapse["y"] = y
@@ -85,9 +85,11 @@ class SynisterDb(object):
         synapse["skeleton_id"] = skeleton_id
         synapse["meta_id"] = meta_id
         synapse["prepost"] = prepost
+        synapse["treenode_id"] = treenode_id
+        synapse["label"] = label
         return synapse
 
-    def __generate_skeleton(self, skeleton_id, hemi_lineage_id, nt_known):
+    def __generate_skeleton(self, skeleton_id, hemi_lineage_id, nt_known, type=None, match=None, quality=None):
         skeleton = deepcopy(self.skeleton)
         skeleton["skeleton_id"] = skeleton_id
         skeleton["hemi_lineage_id"] = hemi_lineage_id
@@ -98,12 +100,17 @@ class SynisterDb(object):
                 pass
             else:
                 skeleton["nt_known"] = [str(nt_known).lower()]
+
+        skeleton["type"] = type
+        skeleton["match"] = match
+        skeleton["quality"] = quality
         return skeleton
 
-    def __generate_hemi_lineage(self, hemi_lineage_id, hemi_lineage_name, nt_guess):
+    def __generate_hemi_lineage(self, hemi_lineage_id, hemi_lineage_name, nt_guess=None, lineage_name=None):
         hemi_lineage = deepcopy(self.hemi_lineage)
         hemi_lineage["hemi_lineage_id"] = hemi_lineage_id
-        hemi_lineage["hemi_lineage_name"] = str(hemi_lineage_name)
+        if hemi_lineage["hemi_lineage_name"] is not None:
+            hemi_lineage["hemi_lineage_name"] = str(hemi_lineage_name)
         if isinstance(nt_guess, list):
             hemi_lineage["nt_guess"] = sorted([str(nt).lower() for nt in nt_guess])
         else:
@@ -111,6 +118,8 @@ class SynisterDb(object):
                 pass
             else:
                 hemi_lineage["nt_guess"] = [str(nt_guess).lower()]
+
+        hemi_lineage["lineage_name"] = lineage_name
         return hemi_lineage
 
     def __generate_meta(self, meta_id, group, tracer):
@@ -227,19 +236,19 @@ class SynisterDb(object):
 
     def write(self, synapses=None, skeletons=None, hemi_lineages=None, metas=None):
         db = self.__get_db()
-        if synapses is not None:
+        if synapses is not None and synapses:
             synapse_documents = [self.__generate_synapse(**synapse) for synapse in synapses]
             synapse_collection = db["synapses"]
             synapse_collection.insert_many(synapse_documents)
-        if skeletons is not None:
+        if skeletons is not None and skeletons:
             skeleton_documents = [self.__generate_skeleton(**skeleton) for skeleton in skeletons]
             skeleton_collection = db["skeletons"]
             skeleton_collection.insert_many(skeleton_documents)
-        if hemi_lineages is not None:
+        if hemi_lineages is not None and hemi_lineages:
             hemi_lineage_documents = [self.__generate_hemi_lineage(**hemi_lineage) for hemi_lineage in hemi_lineages]
             hemi_lineage_collection = db["hemi_lineages"]
             hemi_lineage_collection.insert_many(hemi_lineage_documents)
-        if metas is not None:
+        if metas is not None and metas:
             meta_documents = [self.__generate_meta(**meta) for meta in metas]
             meta_collection = db["meta"]
             meta_collection.insert_many(meta_documents)
@@ -680,7 +689,7 @@ class SynisterDb(object):
         db = self.__get_db()
         synapse_collection = db["synapses"]
 
-        synapse_collection.update_many({}, {"$set": {"splits": {}}})
+        synapse_collection.update_many({}, {"$set": {"splits": {"init": "None"}}})
 
     def make_split(self,
                    split_name,
