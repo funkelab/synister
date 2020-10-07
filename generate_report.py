@@ -161,7 +161,6 @@ def gen_report(path_to_csv):
 
 if __name__ == "__main__":
     skids_csv = sys.argv[1]
-    #skids_csv ="/groups/funke/home/ecksteinn/Projects/synex/synister_predictions/requests/r_130620_Istvan/skids.csv" 
     base_dir = os.path.dirname(skids_csv) + "/predictions"
     model_config = json.load(open(base_dir + "/model_config.json","r"))
     nt_list = model_config["neurotransmitter_list"]
