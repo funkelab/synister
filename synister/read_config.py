@@ -42,6 +42,23 @@ def read_predict_config(predict_config):
         cfg_dict["downsample_factors"].append(f)
     cfg_dict["overwrite"] = config.get("Predict", "overwrite") == "True"
 
+    cfg_dict["network"] = config.get("Predict", "network")
+
+    try:
+        cfg_dict["fmap_inc"] = tuple([int(v) for v in config.get("Predict", "fmap_inc").split(", ")])
+    except:
+        pass
+
+    try:
+        cfg_dict["n_convolutions"] = tuple([int(v) for v in config.get("Predict", "n_convolutions").split(", ")])
+    except:
+        pass
+
+    try:
+        cfg_dict["network_appendix"] = config.get("Predict", "network_appendix")
+    except:
+        pass
+
     return cfg_dict
 
 
@@ -67,6 +84,25 @@ def read_train_config(train_config):
     for factor in downsample_factors:
         f = tuple([int(k) for k in factor])
         cfg_dict["downsample_factors"].append(f)
+
+    try:
+        cfg_dict["network"] = config.get("Training", "network")
+    except:
+        pass
+
+    try:
+        cfg_dict["fmap_inc"] = tuple([int(v) for v in config.get("Training", "fmap_inc").split(", ")])
+    except:
+        pass
+
+    try:
+        cfg_dict["n_convolutions"] = tuple([int(v) for v in config.get("Training", "n_convolutions").split(", ")])
+    except:
+        pass
+    try:
+        cfg_dict["network_appendix"] = config.get("Training", "network_appendix")
+    except:
+        pass
 
     return cfg_dict
 
