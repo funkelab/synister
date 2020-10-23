@@ -1,10 +1,13 @@
 import os
 import json
 import numpy as np
+import torch
 
 from synister.utils import init_vgg, predict, get_raw
 from synister.synister_db import SynisterDb
 from synister.read_config import read_predict_config, read_worker_config
+from efficientnet_pytorch_3d import EfficientNet3D
+from funlib.learn.torch.models import Vgg3D
 
 import logging
 import multiprocessing
@@ -12,6 +15,9 @@ import sys
 
 logger = logging.getLogger(__name__)
 self_path = os.path.realpath(os.path.dirname(__file__))
+
+torch.backends.cudnn.enabled = True
+torch.backends.cudnn.benchmark = True
 
 def test(worker_id,
          train_checkpoint,
@@ -33,16 +39,37 @@ def test(worker_id,
          num_block_workers,
          split_part="test",
          output_classes=None,
+         network="VGG",
+         fmap_inc=(2,2,2,2),
+         n_convolutions=(2,2,2,2),
+         network_appendix=None,
          **kwargs):
 
     if not split_part in ["validation", "test"]:
         raise ValueError("'split_part' must be either 'test' or 'validation'")
 
+    print("Network: ", network)
+    if network == "VGG":
+        model = Vgg3D(input_size=input_shape,
+                      fmaps=fmaps,
+                      downsample_factors=downsample_factors,
+                      fmap_inc=fmap_inc,
+                      n_convolutions=n_convolutions)
 
-    model = init_vgg(train_checkpoint,
-                     input_shape,
-                     fmaps,
-                     downsample_factors)
+    elif network == "Efficient":
+        if network_appendix is None:
+            network_appendix = "b0"
+
+        print(network_appendix)
+        model = EfficientNet3D.from_name("efficientnet-{}".format(network_appendix), 
+                                override_params={'num_classes': len(synapse_types)}, 
+                                in_channels=1)
+
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+    checkpoint = torch.load(train_checkpoint, map_location=device)
+    model.load_state_dict(checkpoint['model_state_dict'])
 
     model.eval()
 
@@ -93,6 +120,9 @@ def test(worker_id,
                                       voxel_size,
                                       raw_container,
                                       raw_dataset)
+        if network == "Efficient":
+            shape = tuple(raw_normalized.shape)
+            raw_normalized = raw_normalized.reshape([batch_size, 1, shape[1], shape[2], shape[3]]).astype(np.float32)
         output = predict(raw_normalized, model)
 
         for k in range(np.shape(output)[0]):
