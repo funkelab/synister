@@ -8,10 +8,12 @@ import numpy as np
 import os
 import sys
 from funlib.learn.torch.models import Vgg3D
+from efficientnet_pytorch_3d import EfficientNet3D
 from synister.gp import SynapseSourceMongo, SynapseTypeSource, InspectLabels
 from synister.read_config import read_train_config
 
-torch.backends.cudnn.enabled = False
+torch.backends.cudnn.enabled = True
+torch.backends.cudnn.benchmark = True
 
 def train_until(max_iteration,
                 db_credentials,
@@ -24,7 +26,10 @@ def train_until(max_iteration,
                 batch_size,
                 voxel_size,
                 raw_container,
-                raw_dataset):
+                raw_dataset,
+                network="VGG",
+                fmap_inc=(2,2,2,2),
+                n_convolutions=(2,2,2,2)):
 
     if not (len(synapse_types) == 6):
         #TODO: Make output dimensions of VGG dynamic
@@ -32,9 +37,18 @@ def train_until(max_iteration,
 
     input_shape = Coordinate(input_shape)
 
-    model = Vgg3D(input_size=input_shape, 
-                  fmaps=fmaps, 
-                  downsample_factors=downsample_factors)
+    if network == "VGG":
+        model = Vgg3D(input_size=input_shape, 
+                      fmaps=fmaps, 
+                      downsample_factors=downsample_factors,
+                      fmap_inc=fmap_inc,
+                      n_convolutions=n_convolutions)
+
+    elif network == "Efficient":
+        model = EfficientNet3D.from_name("efficientnet-b0", override_params={'num_classes': len(synapse_types)}, in_channels=1)
+
+    device = torch.device("cuda" if cuda.is_available() else "cpu")
+    model.to(device)
 
     model.train()
 
