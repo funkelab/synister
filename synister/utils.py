@@ -13,7 +13,7 @@ def predict(raw_batched,
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     raw_batched_tensor = torch.tensor(raw_batched, device=device)
-    output = model(raw=raw_batched_tensor)
+    output = model(raw_batched_tensor)
     output = F.softmax(output, dim=1)
     return output
 
