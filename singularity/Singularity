@@ -118,7 +118,7 @@ PYTHONPATH=${DAISY_ROOT}:$PYTHONPATH
 
 FUNLIB_LEARN_ROOT=/src/funlib/learn/torch
 FUNLIB_LEARN_REPOSITORY=https://github.com/funkelab/funlib.learn.torch.git
-FUNLIB_LEARN_REVISION=c870d3edf016f9f46ae14e06f6430c684e84953a
+FUNLIB_LEARN_REVISION=150886b2af79525a0cca776a610768438b9b2a24
 
 cd ${FUNLIB_LEARN_ROOT}
 git clone ${FUNLIB_LEARN_REPOSITORY} . && \
@@ -141,6 +141,7 @@ pip install pymongo
 pip install opencv-python
 pip install tensorboardX
 pip install iteration_utilities
+pip install git+https://github.com/shijianjian/EfficientNet-PyTorch-3D
 
 %environment
 export MALIS_ROOT=/src/malis
