@@ -165,6 +165,10 @@ class SynisterDb(object):
         query = {"hemi_lineage_id": hemi_lineage_id}
         return query
 
+    def __get_match_ids_query(self, match_ids):
+        query = {"match": {"$in": match_ids}}
+        return query
+
     def __get_hemi_lineage_name_query(self, hemi_lineage_name):
         # Get hemi_lineage id:
         hemi_lineages_collection = self.__get_db()["hemi_lineages"]
@@ -311,7 +315,7 @@ class SynisterDb(object):
 
     def get_synapses(self, skeleton_ids=None, neurotransmitters=None, positions=None, 
                      synapse_ids=None, hemi_lineage_name=None, hemi_lineage_id=None,
-                     split_name=None):
+                     split_name=None, match_ids=None):
         '''Get all the synapses in the DB.
 
         Args:
@@ -344,6 +348,11 @@ class SynisterDb(object):
             split_name (string, optional):
 
                 Return only synapses of the given split.
+
+            match_ids (list of ints, optional)
+
+                Return only synapses whose fafb match skeleton 
+                matches the match_ids
                  
         Returns:
 
@@ -355,6 +364,20 @@ class SynisterDb(object):
         db = self.__get_db()
 
         # Get skeleton_ids:
+        if match_ids is not None:
+            skeleton_collection = db['skeletons']
+            query = self.__get_match_ids_query(match_ids)
+            result = skeleton_collection.find(query, 
+                                              projection=['skeleton_id'])
+
+            match_skeleton_ids = list(n["skeleton_id"] for n in result)
+            print(query, len(match_skeleton_ids))
+
+            if skeleton_ids is None:
+                skeleton_ids = match_skeleton_ids
+            else:
+                skeleton_ids = list(set(skeleton_ids) & set(match_skeleton_ids))
+
         if hemi_lineage_name is not None:
             # Get skeleton IDs for hemi lineage
             skeleton_collection = db['skeletons']
@@ -405,8 +428,6 @@ class SynisterDb(object):
             result = skeleton_collection.find(query,
                                               projection=['skeleton_id'])
             nt_skeleton_ids = list(n['skeleton_id'] for n in result)
-
-
 
             # intersect with skeleton_ids
             if skeleton_ids is None:
