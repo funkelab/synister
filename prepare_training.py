@@ -121,6 +121,9 @@ def create_train_config():
     config.set('Training', 'raw_container', "/nrs/saalfeld/FAFB00/v14_align_tps_20170818_dmg.n5")
     config.set('Training', 'raw_dataset', "volumes/raw/s0")
     config.set('Training', 'downsample_factors', "(2,2,2), (2,2,2), (2,2,2), (2,2,2)")
+    config.set('Training', 'network', "VGG")
+    config.set('Training', 'fmap_inc', "2, 2, 2, 2")
+    config.set('Training', 'n_convolutions', "2, 2, 2, 2")
  
     return config
 

@@ -185,6 +185,10 @@ def create_predict_config(base_dir,
     else:
         config.set('Predict', 'split_part', "test")
     config.set('Predict', 'overwrite', str(False))
+    config.set('Predict', 'network', train_config_dict["network"])
+    config.set('Predict', 'fmap_inc', ", ".join(str(v) for v in train_config_dict["fmap_inc"]))
+    config.set('Predict', 'n_convolutions', ", ".join(str(v) for v in train_config_dict["n_convolutions"]))
+    config.set('Predict', 'network_appendix', train_config_dict["network_appendix"])
 
     return config
  
