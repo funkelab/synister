@@ -72,3 +72,16 @@ class InspectLabels(BatchFilter):
         print("label     :", batch[self.synapse_type].data)
         print("prediction:", batch[self.pred_synapse_type].data)
 
+
+class AddChannelDim(BatchFilter):
+
+    def __init__(self, array):
+        self.array = array
+
+    def process(self, batch, request):
+
+        if self.array not in batch:
+            return
+
+        batch[self.array].data = batch[self.array].data[np.newaxis]
+
