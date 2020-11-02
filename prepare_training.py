@@ -12,17 +12,11 @@ p.add('-d', '--base_dir', required=True,
 p.add('-e', required=True, help='name of the experiment, e.g. fafb')
 p.add('-t', required=True, help='train number/id for this particular run')
 p.add('-c', required=False, action='store_true', help='clean up - remove specified train setup')
-p.add('-s', required=False, action='store_true', help='create a skeleton train setup')
-p.add('-l', required=False, action='store_true', help='create a hemi_lineage train setup')
-p.add('-b', required=False, action='store_true', help='create a brain_region train setup')
 
 def set_up_environment(base_dir,
                        experiment,
                        train_number,
-                       clean_up=False,
-                       skeleton=False,
-                       hemi_lineage=False,
-                       brain_region=False):
+                       clean_up=False):
     ''' Sets up the directory structure and config file for 
         training a network for microtubule prediction.
 
@@ -69,17 +63,7 @@ def set_up_environment(base_dir,
 
         this_dir = os.path.dirname(__file__)
         copyfile(os.path.join(this_dir, "synister/train.py"), os.path.join(setup_dir, "train.py"))
-
-        if np.sum([skeleton, hemi_lineage, brain_region]) > 1: 
-            raise ValueError("Select either skeleton, brain_region or hemi_lineage setup or none")
-        if skeleton:
-            copyfile(os.path.join(this_dir, "synister/skeleton_network/train_pipeline.py"), os.path.join(setup_dir, "train_pipeline.py"))
-        elif hemi_lineage:
-            copyfile(os.path.join(this_dir, "synister/hemi_lineage_network/train_pipeline.py"), os.path.join(setup_dir, "train_pipeline.py"))
-        elif brain_region:
-            copyfile(os.path.join(this_dir, "synister/brain_region_network/train_pipeline.py"), os.path.join(setup_dir, "train_pipeline.py"))
-        else:
-            copyfile(os.path.join(this_dir, "synister/train_pipeline.py"), os.path.join(setup_dir, "train_pipeline.py"))
+        copyfile(os.path.join(this_dir, "synister/train_pipeline.py"), os.path.join(setup_dir, "train_pipeline.py"))
         
         train_config = create_train_config()
 
@@ -158,13 +142,7 @@ if __name__ == "__main__":
     experiment = options.e
     train_number = int(options.t)
     clean_up = bool(options.c)
-    skeleton = bool(options.s)
-    hemi_lineage = bool(options.l)
-    brain_region = bool(options.b)
     set_up_environment(base_dir,
                        experiment,
                        train_number,
-                       clean_up,
-                       skeleton,
-                       hemi_lineage,
-                       brain_region)
+                       clean_up)
