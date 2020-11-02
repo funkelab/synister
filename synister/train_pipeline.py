@@ -29,7 +29,8 @@ def train_until(max_iteration,
                 raw_dataset,
                 network="VGG",
                 fmap_inc=(2,2,2,2),
-                n_convolutions=(2,2,2,2)):
+                n_convolutions=(2,2,2,2),
+                network_appendix="b0"):
 
     if not (len(synapse_types) == 6):
         #TODO: Make output dimensions of VGG dynamic
@@ -45,9 +46,9 @@ def train_until(max_iteration,
                       n_convolutions=n_convolutions)
 
     elif network == "Efficient":
-        model = EfficientNet3D.from_name("efficientnet-b0", override_params={'num_classes': len(synapse_types)}, in_channels=1)
+        model = EfficientNet3D.from_name("efficientnet-{}".format(network_appendix), override_params={'num_classes': len(synapse_types)}, in_channels=1)
 
-    device = torch.device("cuda" if cuda.is_available() else "cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
 
     model.train()
