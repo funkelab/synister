@@ -8,7 +8,4 @@ setup(
     author='Funkelab',
     packages=[
         'synister',
-        'synister.skeleton_network',
-        'synister.hemi_lineage_network',
-        'synister.brain_region_network'
         ])
