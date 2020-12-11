@@ -32,10 +32,6 @@ def train_until(max_iteration,
                 n_convolutions=(2,2,2,2),
                 network_appendix="b0"):
 
-    if not (len(synapse_types) == 6):
-        #TODO: Make output dimensions of VGG dynamic
-        raise Warning("Synapse types does not contain 6 classes. This may be inconsistent with your network setup.")
-
     input_shape = Coordinate(input_shape)
 
     if network == "VGG":
@@ -43,7 +39,8 @@ def train_until(max_iteration,
                       fmaps=fmaps, 
                       downsample_factors=downsample_factors,
                       fmap_inc=fmap_inc,
-                      n_convolutions=n_convolutions)
+                      n_convolutions=n_convolutions,
+                      output_classes=len(synapse_types))
 
     elif network == "Efficient":
         model = EfficientNet3D.from_name("efficientnet-{}".format(network_appendix), override_params={'num_classes': len(synapse_types)}, in_channels=1)
@@ -115,6 +112,7 @@ def train_until(max_iteration,
         PreCache(
             cache_size=40,
             num_workers=10) +
+        AddChannelDim(raw) + 
         Stack(batch_size) +
         Train(
             model,
