@@ -9,7 +9,7 @@ import os
 import sys
 from funlib.learn.torch.models import Vgg3D
 from efficientnet_pytorch_3d import EfficientNet3D
-from synister.gp import SynapseSourceMongo, SynapseTypeSource, InspectLabels
+from synister.gp import SynapseSourceMongo, SynapseTypeSource, InspectLabels, AddChannelDim
 from synister.read_config import read_train_config
 
 torch.backends.cudnn.enabled = True
