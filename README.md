@@ -12,6 +12,7 @@ make
 conda create -n synister python=3.6 numpy scipy cython
 conda activate synister
 pip install -r requirements.txt
+pip install .
 ```
 
 ## Usage
