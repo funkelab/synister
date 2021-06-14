@@ -1,6 +1,5 @@
 from gunpowder import *
 from synister.synister_db import SynisterDb
-from pyquaternion import Quaternion
 import random
 import numpy as np
 
@@ -23,8 +22,12 @@ class SynapseSourceMongo(CsvPointsSource):
                                                  scale=scale)
 
     def _read_points(self):
-        if self.synapse_type != "unknown":
-            print("Reading split {} from db {}".format(self.split_name, self.db_name))
+        print("Reading split {} type {} from db {}".format(self.split_name, 
+                                                               self.synapse_type,
+                                                               self.db_name))
+        if self.synapse_type[0] == "unknown":
+            points = self.get_unknown_synapse_type()
+        else:
             synapses = self.db.get_synapses(neurotransmitters=self.synapse_type,
                                             split_name=self.split_name)
 
@@ -38,9 +41,8 @@ class SynapseSourceMongo(CsvPointsSource):
                             for synapse in synapses.values()
                             if synapse["splits"][self.split_name] == "train"
                             ])
-        else:
-            points = get_unknown_synapse_type()
 
+        print(self.synapse_type, np.shape(points))
         self.data = points
         self.ndims = 3
 
@@ -58,25 +60,29 @@ class SynapseSourceMongo(CsvPointsSource):
         for nt in nt_types_all:
             synapses_nt = self.db.get_synapses(neurotransmitters=(nt,), 
                                                split_name=self.split_name)
-            points_nt = [[
+            points_nt = [
                             [
                                 int(synapse["z"]),
                                 int(synapse["y"]),
                                 int(synapse["x"])
                                 
                             ]
-                        for synapse in synapses.values()
+                        for synapse in synapses_nt.values()
                         if synapse["splits"][self.split_name] == "train"
-                        ]]
+                            ]
 
             random.shuffle(points_nt)
             n = min(len(points_nt), n_type)
             synapse_locs.extend(points_nt[:n])
 
-    random_offsets = self.get_random_offsets(len(synapse_locs))
-    synapse_locs = np.array(synapse_locs)
-    synapse_locs += random_offsets
-    return synapse_locs
+        
+        random_offsets = self.get_random_offsets(len(synapse_locs))
+        synapse_locs = np.array(synapse_locs, dtype=np.int64)
+        print("Syn locs", np.shape(synapse_locs))
+        print("Rand offsets", np.shape(random_offsets))
+
+        synapse_locs += random_offsets.astype(np.int64)
+        return synapse_locs
 
     def sample_trig(self, npoints):
         theta = 2*np.pi*np.random.rand(npoints)
@@ -89,12 +95,11 @@ class SynapseSourceMongo(CsvPointsSource):
     def sample_radii(self, npoints, d_min=2000, d_max=4000):
         return np.random.randint(d_min, high=d_max, size=npoints)
 
-    def get_random_offset(self, npoints):
-        direction_samples = self.sample_trig(n_points)
-        radii_samples = sample_radii(npoints)
-        offset_samples = direction_samples * radii_samples
+    def get_random_offsets(self, npoints):
+        direction_samples = self.sample_trig(npoints)
+        radii_samples = self.sample_radii(npoints)
+        offset_samples = np.array(direction_samples * radii_samples, dtype=np.int64)
         return offset_samples.T
-
 
 class SynapseTypeSource(BatchProvider):
     def __init__(self, synapse_types, synapse_type, array):
