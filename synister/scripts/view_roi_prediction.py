@@ -21,26 +21,30 @@ p = configargparse.ArgParser()
 p.add('-r', required=False,
       help='raw dataset path',
       default='/nrs/saalfeld/FAFB00/v14_align_tps_20170818_dmg.n5')
-p.add('-p', required=True,
-      help='prediction container')
-p.add('-d', required=True,
-      help='prediction dataset')
+p.add('-p', required=False,
+      help='prediction container', default="")
+p.add('-d', required=False,
+      help='prediction dataset', default="")
 
 options = p.parse_args()
 raw_file = options.r
-prediction_file = options.p
-prediction_dset = options.d
+prediction = None
+if options.p and options.d:
+    prediction_file = options.p
+    prediction_dset = options.d
+    prediction = daisy.open_ds(prediction_file, prediction_dset)
+
 
 raw = [
     daisy.open_ds(raw_file, 'volumes/raw/s%d'%s)
     for s in range(17)
 ]
 
-prediction = daisy.open_ds(prediction_file, prediction_dset)
 
 viewer = neuroglancer.Viewer()
 with viewer.txn() as s:
-    add_layer(s, prediction, 'prediction')
+    if prediction is not None:
+        add_layer(s, prediction, 'prediction')
     add_layer(s, raw, 'raw')
 
 print(viewer)
