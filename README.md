@@ -66,3 +66,13 @@ Finally, to submit the train job with the desired number of iterations run:
 python train.py <num_iterations>
 ```
 We recommend training for at least 500,000 iterations for FAVB_v3 splits.
+
+For visualizing training progress run:
+```console
+tensorboard --logdir <path_to_train_dir>/<experiment_name>/02_train/setup_t<train_id>/log
+```
+
+Snapshots are written to:
+```console
+<path_to_train_dir>/<experiment_name>/02_train/setup_t<train_id>/snapshots
+```
