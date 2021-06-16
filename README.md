@@ -30,7 +30,9 @@ This creates a new directory at the specified path and initialises default confi
 cd <path_to_train_dir>/<experiment_name>/02_train/setup_t<train_id>
 ```
 Edit config files to match architecture, database and compute resources to train with. For example configs see:
-```example_configs/train_config.ini
+```
+example_configs/train_config.ini
+
 [Training]
 synapse_types = gaba, acetylcholine, glutamate, serotonin, octopamine, dopamine
 input_shape = 16, 160, 160
