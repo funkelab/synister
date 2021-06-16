@@ -47,6 +47,17 @@ raw_dataset = volumes/raw/s0
 downsample_factors = (1,2,2), (1,2,2), (1,2,2), (2,2,2)
 ```
 
+```
+example_configs/worker_config.ini
+
+[Worker]
+singularity_container = synister/singularity/synister.img
+num_cpus = 5
+num_block_workers = 1
+num_cache_workers = 5
+queue = gpu-any
+mount_dirs = /nrs, /scratch, /groups, /misc
+```
 
 ```console
 python train.py
