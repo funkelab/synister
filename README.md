@@ -29,7 +29,9 @@ This creates a new directory at the specified path and initialises default confi
 ```console
 cd <path_to_train_dir>/<experiment_name>/02_train/setup_t<train_id>
 ```
-Edit config files to match architecture, database and compute resources to train with. For example configs see:
+Edit config files to match architecture, database and compute resources to train with. 
+
+For example configs, training a VGG on the skeleton split, inside a singularity container, on a gpu queue see:
 ```
 example_configs/train_config.ini
 
@@ -59,6 +61,7 @@ queue = gpu-any
 mount_dirs = /nrs, /scratch, /groups, /misc
 ```
 
+Finally, to submit the train job run:
 ```console
 python train.py
 ```
