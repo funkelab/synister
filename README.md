@@ -47,6 +47,10 @@ voxel_size = 40, 4, 4
 raw_container = /nrs/saalfeld/FAFB00/v14_align_tps_20170818_dmg.n5
 raw_dataset = volumes/raw/s0
 downsample_factors = (1,2,2), (1,2,2), (1,2,2), (2,2,2)
+network = VGG
+fmap_inc = 2, 2, 2, 2
+n_convolutions = 2, 2, 2, 2
+network_appendix = None
 ```
 
 ```
@@ -57,7 +61,7 @@ singularity_container = synister/singularity/synister.img
 num_cpus = 5
 num_block_workers = 1
 num_cache_workers = 5
-queue = gpu-any
+queue = gpu_any
 mount_dirs = /nrs, /scratch, /groups, /misc
 ```
 
