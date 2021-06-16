@@ -17,17 +17,17 @@ pip install .
 
 ## Usage
 
-### 1. Training a new network from scratch.
+### 1. Training a network.
 #### Prepare training
 ```console
-python prepare_training.py -d <path_to_train_dir> -e <name for the experiment/run> -t <an integer id for the training run>
+python prepare_training.py -d <base_dir> -e <experiment_name> -t <train_idn>
 ```
 
 This creates a new directory at the specified path and initialises default config files for the run.
 
 #### Run Training
 ```console
-cd <path_to_train_dir>/<experiment_name>/02_train/setup_t<train_id>
+cd <base_dir>/<experiment_name>/02_train/setup_t<train_id>
 ```
 Edit config files to match architecture, database and compute resources to train with. 
 
@@ -69,10 +69,21 @@ We recommend training for at least 500,000 iterations for FAVB_v3 splits.
 
 For visualizing training progress run:
 ```console
-tensorboard --logdir <path_to_train_dir>/<experiment_name>/02_train/setup_t<train_id>/log
+tensorboard --logdir <base_dir>/<experiment_name>/02_train/setup_t<train_id>/log
 ```
 
 Snapshots are written to:
 ```console
-<path_to_train_dir>/<experiment_name>/02_train/setup_t<train_id>/snapshots
+<base_dir>/<experiment_name>/02_train/setup_t<train_id>/snapshots
 ```
+
+### 2. Validating a trained network.
+#### Prepare validation runs
+```console
+python prepare_prediction.py -d <base_dir> -e <experiment_namen> -t <train_id> -i <iter_0> <iter_1> <iter_2> ... <iter_N> -v
+```
+
+This will create N prediction directories with appropriately initialized config files, one for each given train iteration <iter_k>. The -v flag sets the split part of the chosen split type to validation, only pulling those synapses from the DB that are tagged as validation synapses.
+
+
+
