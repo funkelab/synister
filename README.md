@@ -29,7 +29,23 @@ This creates a new directory at the specified path and initialises default confi
 ```console
 cd <path_to_train_dir>/<experiment_name>/02_train/setup_t<train_id>
 ```
-Edit config files to match architecture, database and compute resources to train with.
+Edit config files to match architecture, database and compute resources to train with. For example configs see:
+```example_configs/train_config.ini
+[Training]
+synapse_types = gaba, acetylcholine, glutamate, serotonin, octopamine, dopamine
+input_shape = 16, 160, 160
+fmaps = 12
+batch_size = 8
+db_credentials = synister_data/credentials/db_credentials.ini
+db_name_data = synister_v3
+split_name = skeleton
+voxel_size = 40, 4, 4
+raw_container = /nrs/saalfeld/FAFB00/v14_align_tps_20170818_dmg.n5
+raw_dataset = volumes/raw/s0
+downsample_factors = (1,2,2), (1,2,2), (1,2,2), (2,2,2)
+```
+
+
 ```console
 python train.py
 ```
