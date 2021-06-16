@@ -61,7 +61,8 @@ queue = gpu-any
 mount_dirs = /nrs, /scratch, /groups, /misc
 ```
 
-Finally, to submit the train job run:
+Finally, to submit the train job with the desired number of iterations run:
 ```console
-python train.py
+python train.py <num_iterations>
 ```
+We recommend training for at least 500,000 iterations for FAVB_v3 splits.
