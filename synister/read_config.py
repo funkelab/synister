@@ -42,7 +42,10 @@ def read_predict_config(predict_config):
         cfg_dict["downsample_factors"].append(f)
     cfg_dict["overwrite"] = config.get("Predict", "overwrite") == "True"
 
-    cfg_dict["network"] = config.get("Predict", "network")
+    try:
+        cfg_dict["network"] = config.get("Predict", "network")
+    except:
+        pass
 
     try:
         cfg_dict["fmap_inc"] = tuple([int(v) for v in config.get("Predict", "fmap_inc").split(", ")])
