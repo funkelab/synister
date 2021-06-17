@@ -55,7 +55,7 @@ def test(worker_id,
                       fmap_inc=fmap_inc,
                       n_convolutions=n_convolutions)
     else:
-        raise NotImplementedError("Only VGG network available.")
+        raise NotImplementedError("Only VGG network accesible.")
 
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -112,9 +112,9 @@ def test(worker_id,
                                       voxel_size,
                                       raw_container,
                                       raw_dataset)
-        if network == "Efficient":
-            shape = tuple(raw_normalized.shape)
-            raw_normalized = raw_normalized.reshape([batch_size, 1, shape[1], shape[2], shape[3]]).astype(np.float32)
+        
+        shape = tuple(raw_normalized.shape)
+        raw_normalized = raw_normalized.reshape([batch_size, 1, shape[1], shape[2], shape[3]]).astype(np.float32)
         output = predict(raw_normalized, model)
 
         for k in range(np.shape(output)[0]):
