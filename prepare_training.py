@@ -95,8 +95,8 @@ def create_train_config():
         synapse_types_string += s + ", "
     synapse_types_string = synapse_types_string[:-2]
     config.set('Training', 'synapse_types', synapse_types_string)
-    config.set('Training', 'input_shape', '32, 128, 128')
-    config.set('Training', 'fmaps', '32')
+    config.set('Training', 'input_shape', '16, 160, 160')
+    config.set('Training', 'fmaps', '16')
     config.set('Training', 'batch_size', '8')
     config.set('Training', 'db_credentials', str(None))
     config.set('Training', 'db_name_data', str(None))
@@ -104,7 +104,7 @@ def create_train_config():
     config.set('Training', 'voxel_size', "40, 4, 4")
     config.set('Training', 'raw_container', "/nrs/saalfeld/FAFB00/v14_align_tps_20170818_dmg.n5")
     config.set('Training', 'raw_dataset', "volumes/raw/s0")
-    config.set('Training', 'downsample_factors', "(2,2,2), (2,2,2), (2,2,2), (2,2,2)")
+    config.set('Training', 'downsample_factors', "(1,2,2), (1,2,2), (1,2,2), (2,2,2)")
     config.set('Training', 'network', "VGG")
     config.set('Training', 'fmap_inc', "2, 2, 2, 2")
     config.set('Training', 'n_convolutions', "2, 2, 2, 2")
