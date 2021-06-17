@@ -121,3 +121,5 @@ For most use cases the automatically initialized predict config does not require
 <db_name>_predictions.<split_name>_<experiment_name>_t<train_id>_p<predict_id>
 ```
 If the collection already exists the script will abort. A collection can be overwritten by setting overwrite=True in the predict config.
+
+Parallel prediction with multiple GPUs can be done by setting num_block_workers=num_gpus in the worker_config file.
