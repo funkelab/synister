@@ -1,4 +1,4 @@
-# Scripts for training and evaluating synister networks.
+# Package for training, validating and testing Synister networks.
 
 ## Installation
 
