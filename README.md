@@ -100,7 +100,7 @@ Snapshots are written to:
 ### 2. Validating a trained network.
 #### Prepare validation runs
 ```console
-python prepare_prediction.py -d <base_dir> -e <experiment_name> -t <train_id> -i <iter_0> <iter_1> <iter_2> ... <iter_N> -v
+python prepare_prediction.py -v -d <base_dir> -e <experiment_name> -t <train_id> -i <iter_0> <iter_1> <iter_2> ... <iter_N> 
 ```
 
 This will create N prediction directories with appropriately initialized config files, one for each given train iteration <iter_k>. The -v flag sets the split part of the chosen split type to validation, only pulling those synapses from the DB that are tagged as validation synapses.
