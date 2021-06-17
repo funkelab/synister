@@ -8,7 +8,6 @@ import numpy as np
 import os
 import sys
 from funlib.learn.torch.models import Vgg3D
-from efficientnet_pytorch_3d import EfficientNet3D
 from synister.gp import SynapseSourceMongo, SynapseTypeSource, InspectLabels, AddChannelDim
 from synister.read_config import read_train_config
 
@@ -41,9 +40,8 @@ def train_until(max_iteration,
                       fmap_inc=fmap_inc,
                       n_convolutions=n_convolutions,
                       output_classes=len(synapse_types))
-
-    elif network == "Efficient":
-        model = EfficientNet3D.from_name("efficientnet-{}".format(network_appendix), override_params={'num_classes': len(synapse_types)}, in_channels=1)
+    else: 
+        raise NotImplementedError("Only VGG available")
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)

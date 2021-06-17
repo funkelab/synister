@@ -6,7 +6,6 @@ import torch
 from synister.utils import init_vgg, predict, get_raw
 from synister.synister_db import SynisterDb
 from synister.read_config import read_predict_config, read_worker_config
-from efficientnet_pytorch_3d import EfficientNet3D
 from funlib.learn.torch.models import Vgg3D
 
 import logging
@@ -55,15 +54,8 @@ def test(worker_id,
                       downsample_factors=downsample_factors,
                       fmap_inc=fmap_inc,
                       n_convolutions=n_convolutions)
-
-    elif network == "Efficient":
-        if network_appendix is None:
-            network_appendix = "b0"
-
-        print(network_appendix)
-        model = EfficientNet3D.from_name("efficientnet-{}".format(network_appendix), 
-                                override_params={'num_classes': len(synapse_types)}, 
-                                in_channels=1)
+    else:
+        raise NotImplementedError("Only VGG network available.")
 
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
