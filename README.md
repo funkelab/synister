@@ -29,7 +29,7 @@ An export of the three collections constituting the synister FAFB database used 
 2. Skid, neurotransmitter, hemilineage id for each skeleton (skeletons.json).
 3. Hemilineage name, hemilineage id for each hemilineage (hemilineages.json).
 
-To reproduce the experiment each json file should be imported as a collection with the same name in one mongo database. Dictionary keys are field names. Splits can be reproduced using ```synister/splits.py``` and must be added to the database before training.
+To reproduce the experiment each json file should be imported as a collection with the same name in one mongo database. Dictionary keys are field names. Prvoided splits can be reproduced using ```synister/split.py```, which searches for the optimal split with equal neurtransmitter distribution for any given superset, such as hemilineage id or skeleteon id.
 
 ### 1. Training a network.
 #### Prepare training
