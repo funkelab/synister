@@ -1,4 +1,10 @@
 # Package for training, validating and testing Synister networks.
+**Related Paper** [Neurotransmitter Classification from Electron Microscopy Images at Synaptic Sites in Drosophila.](https://www.biorxiv.org/content/10.1101/2020.06.12.148775v2) 
+
+**Related Repositories**
+1. [Package for on demand predictions with a production network.](https://github.com/funkelab/synistereq)
+2. [Package for high performance full brain predictions.](https://github.com/funkelab/synisterbrain)
+3. [Webservice.](https://github.com/nilsec/synisterest)
 
 ## Installation
 
