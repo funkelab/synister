@@ -1,4 +1,10 @@
-# Scripts for training and evaluating synister networks.
+# Package for training, validating and testing Synister networks.
+**Related Paper** [Neurotransmitter Classification from Electron Microscopy Images at Synaptic Sites in Drosophila.](https://www.biorxiv.org/content/10.1101/2020.06.12.148775v2) 
+
+**Related Repositories**
+1. [Package for on demand predictions with a production network.](https://github.com/funkelab/synistereq)
+2. [Package for high performance full brain predictions.](https://github.com/funkelab/synisterbrain)
+3. [Webservice.](https://github.com/nilsec/synisterest)
 
 ## Installation
 
@@ -20,7 +26,7 @@ pip install .
 ### 1. Training a network.
 #### Prepare training
 ```console
-python prepare_training.py -d <base_dir> -e <experiment_name> -t <train_idn>
+python prepare_training.py -d <base_dir> -e <experiment_name> -t <train_id>
 ```
 
 This creates a new directory at the specified path and initialises default config files for the run.
