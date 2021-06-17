@@ -20,7 +20,7 @@ pip install .
 ### 1. Training a network.
 #### Prepare training
 ```console
-python prepare_training.py -d <base_dir> -e <experiment_name> -t <train_idn>
+python prepare_training.py -d <base_dir> -e <experiment_name> -t <train_id>
 ```
 
 This creates a new directory at the specified path and initialises default config files for the run.
