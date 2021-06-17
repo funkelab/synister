@@ -89,5 +89,37 @@ python prepare_prediction.py -d <base_dir> -e <experiment_name> -t <train_id> -i
 
 This will create N prediction directories with appropriately initialized config files, one for each given train iteration <iter_k>. The -v flag sets the split part of the chosen split type to validation, only pulling those synapses from the DB that are tagged as validation synapses.
 
+```
+example_configs/worker_config.ini
 
+[Predict]
+train_checkpoint = <experiment_name>/02_train/setup_t<train_id>/model_checkpoint_<iter_k>
+experiment = <experiment_name>
+train_number = 0
+predict_number = 0
+synapse_types = gaba, acetylcholine, glutamate, serotonin, octopamine, dopamine
+input_shape = 16, 160, 160
+fmaps = 12
+batch_size = 8
+db_credentials = synister_data/credentials/db_credentials.ini
+db_name_data = synister_v3
+split_name = skeleton
+voxel_size = 40, 4, 4
+raw_container = /nrs/saalfeld/FAFB00/v14_align_tps_20170818_dmg.n5
+raw_dataset = volumes/raw/s0
+downsample_factors = (1, 2, 2), (1, 2, 2), (1, 2, 2), (2, 2, 2)
+split_part = validation
+overwrite = False
+network = VGG
+fmap_inc = 2, 2, 2, 2
+n_convolutions = 2, 2, 2, 2
+network_appendix = None
+```
 
+For most use cases the automatically initialized predict config does not require any edits. If run as is, predictions will be written into the database under:
+```
+<db_name>_predictions.<split_name>_<experiment_name>_t<train_id>_p<predict_id>
+```
+If the collection already exists the script will abort. A collection can be overwritten by setting overwrite=True in the predict config.
+
+Parallel prediction with multiple GPUs can be done by setting num_block_workers=num_gpus in the worker_config file.
