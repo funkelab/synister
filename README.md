@@ -22,6 +22,14 @@ pip install .
 ```
 
 ## Usage
+### 0. Creating a mongo DB database with the provided data.
+An export of the three collections constituting the synister FAFB database used for all described experiments can be found at ```data/fafb_v3```. The three files contain:
+
+1. Location, id and skid for each synapse (synapses.json).
+2. Skid, neurotransmitter, hemilineage id for each skeleton (skeletons.json).
+3. Hemilineage name, hemilineage id for each hemilineage (hemilineages.json).
+
+To reproduce the experiment each json file should be imported as a collection with the same name in one mongo database. Dictionary keys are field names. Splits can be reproduced using ```synister/splits.py``` and must be added to the database before training.
 
 ### 1. Training a network.
 #### Prepare training
