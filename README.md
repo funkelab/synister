@@ -136,4 +136,29 @@ For most use cases the automatically initialized predict config does not require
 ```
 <db_name>_predictions.<split_name>_<experiment_name>_t<train_id>_p<predict_id>
 ```
+
+To start the prediction, run:
+```console
+cd <base_dir>/<experiment_name>/03_predict/setup_t<train_id>_p<predict_id>
+python predict.py
+```
+
 If the collection already exists the script will abort. A collection can be overwritten by setting overwrite=True in the predict config. Parallel prediction with multiple GPUs can be done by setting num_block_workers=num_gpus in the worker_config file. Prediction speed and expected time to finish will be shown in the console.
+
+For submitting multiple predictions to the cluster at once run the provided convenience script:
+```console
+python start_predictions -d <base_dir> -e <experiment_name> -t <train_id> -p <predict_id_0> <predict_id_1> ... <predict_id_N>
+```
+
+### 3. Testing a trained network.
+#### Prepare test runs
+```console
+python prepare_prediction.py -d <base_dir> -e <experiment_name> -t <train_id> -i <iter_0> <iter_1> <iter_2> ... <iter_N>
+```
+
+Similar to validation this prepares the relevant dictionaries and config files but sets the split part to "test".
+Starting the prediction follow the same pattern as before:
+```console
+cd <base_dir>/<experiment_name>/03_predict/setup_t<train_id>_p<predict_id>
+python predict.py
+```
