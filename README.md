@@ -31,6 +31,8 @@ An export of the three collections constituting the synister FAFB database used 
 
 To reproduce the experiment each json file should be imported as a collection with names "synapses", "skeletons", "hemilineages" in one mongo database (for additional instructions on how to import json files in a mongo db click [here](https://docs.mongodb.com/database-tools/mongoimport/)). Dictionary keys are field names. Provided splits can be reproduced using ```synister/split.py```, which searches for the optimally balanced split in terms of neurotransmitter distribution for any given superset, such as hemilineage id, skeleton id or brain region.
 
+For training on other data, recreate the database scheme shown here (required are a "synapses" and a "skeletons" collections) and adapt config files to match the new database name.
+
 ### 1. Training a network.
 #### Prepare training
 ```console
