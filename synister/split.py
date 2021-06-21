@@ -195,14 +195,17 @@ def find_optimal_split(synapse_ids,
         objective.set_coefficient(slack_u[nt], 1./target[nt])
         objective.set_coefficient(slack_l[nt], 1./target[nt])
 
-    variable_types = pylp.VariableTypeMap()
+    variable_types = {}
     for nt in neurotransmitters:
         variable_types[slack_u[nt]] = pylp.VariableType.Integer
         variable_types[slack_l[nt]] = pylp.VariableType.Integer
         variable_types[sum_synapses[nt]] = pylp.VariableType.Integer
 
-    solver = pylp.create_linear_solver(pylp.Preference.Gurobi)
-    solver.initialize(num_variables, pylp.VariableType.Binary, variable_types)
+    solver = pylp.LinearSolver(
+        num_variables,
+        pylp.VariableType.Binary,
+        variable_types,
+        preference=pylp.Preference.Any)
 
     solver.set_objective(objective)
     solver.set_constraints(constraints)
