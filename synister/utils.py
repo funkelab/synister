@@ -117,6 +117,14 @@ def get_raw(locs,
     dataset = daisy.open_ds(data_container,
                             data_set)
 
+    if tuple(dataset.voxel_size) != tuple(voxel_size):
+        dataset.voxel_size = voxel_size
+        roi_shape = dataset.roi.get_shape()
+        roi_offset = dataset.roi.get_offset()
+        roi_shape_phys = roi_shape * voxel_size[::-1]
+        roi_offset_phys = roi_offset * voxel_size[::-1]
+        dataset.roi = daisy.Roi(roi_offset_phys, roi_shape_phys)
+
     for loc in locs:
         loc = daisy.Coordinate(tuple(loc))
         offset_nm = loc - (size/2*voxel_size)
@@ -127,7 +135,7 @@ def get_raw(locs,
 
         if not dataset.roi.contains(roi):
             logger.warning("Location %s is not fully contained in dataset" % loc)
-            return
+            return None, None
 
         raw.append(dataset[roi].to_ndarray())
 
