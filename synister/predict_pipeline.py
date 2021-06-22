@@ -53,7 +53,8 @@ def test(worker_id,
                       fmaps=fmaps,
                       downsample_factors=downsample_factors,
                       fmap_inc=fmap_inc,
-                      n_convolutions=n_convolutions)
+                      n_convolutions=n_convolutions,
+                      output_classes=len(synapse_types))
     else:
         raise NotImplementedError("Only VGG network accesible.")
 
