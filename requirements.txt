@@ -8,10 +8,10 @@ ConfigArgParse
 pymongo
 tensorflow
 iteration_utilities
-gunpowder==1.1.1
 tqdm
 notebook==6.1.4
 git+git://github.com/nilsec/pymaid@master
+-e git+https://github.com/funkey/gunpowder.git@754607abcd3c84ec28c0d2ea257b969934ce986d#egg=gunpowder
 -e git+https://github.com/funkey/numcodecs.git@f950047d7b666723f81006cbdfd82c0e6705c39c#egg=numcodecs
 -e git+https://github.com/funkey/zarr.git@9ddf849a6e3329f5ff361ebf6156712926e2fdfe#egg=zarr
 -e git+https://github.com/funkelab/daisy.git@0.3-dev#egg=daisy
