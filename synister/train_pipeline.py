@@ -71,7 +71,7 @@ def train_until(max_iteration,
         ZarrSource(
             raw_container,
             datasets={raw: raw_dataset},
-            array_specs={raw: ArraySpec(interpolatable=True)}) +
+            array_specs={raw: ArraySpec(interpolatable=True, voxel_size=voxel_size)}) +
         Normalize(raw) +
         Pad(raw, None)
     )
