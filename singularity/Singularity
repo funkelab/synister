@@ -48,10 +48,6 @@ conda update -q conda
 conda info -a
 conda install python=3.6
 
-# install tensorflow
-
-conda install tensorflow-gpu
-
 MALIS_ROOT=/src/malis
 MALIS_REPOSITORY=https://github.com/TuragaLab/malis.git
 MALIS_REVISION=beb4ee965acee89ab00a20a70205f51177003c69
@@ -128,7 +124,7 @@ python setup.py build_ext --inplace
 PYTHONPATH=${FUNLIB_LEARN_ROOT}:$PYTHONPATH
 
 # install pytorch
-conda install pytorch torchvision cudatoolkit=9.0 -c pytorch
+conda install pytorch torchvision cudatoolkit=10.2 -c pytorch
 
 # install synister
 cd /src/synister
@@ -139,9 +135,7 @@ PYTHONPATH=/src/synister:$PYTHONPATH
 pip install mahotas
 pip install pymongo
 pip install opencv-python
-pip install tensorboardX
 pip install iteration_utilities
-pip install git+https://github.com/shijianjian/EfficientNet-PyTorch-3D
 
 %environment
 export MALIS_ROOT=/src/malis
