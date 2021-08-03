@@ -109,6 +109,7 @@ def create_train_config():
     config.set('Training', 'fmap_inc', "2, 2, 2, 2")
     config.set('Training', 'n_convolutions', "2, 2, 2, 2")
     config.set('Training', 'network_appendix', "None")
+    config.set('Training', 'neither_class', 'False')
  
     return config
 

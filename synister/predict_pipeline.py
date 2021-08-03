@@ -36,6 +36,7 @@ def test(worker_id,
          predict_number,
          num_cache_workers,
          num_block_workers,
+         neither_class, 
          split_part="test",
          output_classes=None,
          network="VGG",
@@ -49,12 +50,15 @@ def test(worker_id,
 
     print("Network: ", network)
     if network == "VGG":
+        output_classes = len(synapse_types)
+        if neither_class:
+            output_classes +=1
         model = Vgg3D(input_size=input_shape,
                       fmaps=fmaps,
                       downsample_factors=downsample_factors,
                       fmap_inc=fmap_inc,
                       n_convolutions=n_convolutions,
-                      output_classes=len(synapse_types))
+                      output_classes=output_classes)
     else:
         raise NotImplementedError("Only VGG network accesible.")
 

@@ -103,8 +103,10 @@ class SynapseSourceMongo(CsvPointsSource):
 
 class SynapseTypeSource(BatchProvider):
     def __init__(self, synapse_types, synapse_type, array):
-        n = len(synapse_types)
-        i = synapse_types.index(synapse_type)
+        if(synapse_type == -1):
+            i = len(synapse_types)
+        else:
+            i = synapse_types.index(synapse_type)
 
         self.label = np.int64(i)
         self.array = array
@@ -124,6 +126,7 @@ class SynapseTypeSource(BatchProvider):
             spec)
 
         return batch
+
 
 class InspectLabels(BatchFilter):
     def __init__(self, synapse_type, pred_synapse_type):

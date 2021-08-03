@@ -168,7 +168,8 @@ def create_predict_config(base_dir,
     config.set('Predict', 'fmap_inc', ", ".join(str(v) for v in train_config_dict["fmap_inc"]))
     config.set('Predict', 'n_convolutions', ", ".join(str(v) for v in train_config_dict["n_convolutions"]))
     config.set('Predict', 'network_appendix', train_config_dict["network_appendix"])
-
+    config.set('Predict', 'neither_class', str(train_config_dict["neither_class"]))
+    
     return config
  
 if __name__ == "__main__":

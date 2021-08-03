@@ -29,17 +29,21 @@ def train_until(max_iteration,
                 network="VGG",
                 fmap_inc=(2,2,2,2),
                 n_convolutions=(2,2,2,2),
-                network_appendix="b0"):
+                network_appendix="b0",
+                neither_class):
 
     input_shape = Coordinate(input_shape)
 
     if network == "VGG":
+        output_classes = len(synapse_types)
+        if neither_class:
+            output_classes +=1
         model = Vgg3D(input_size=input_shape, 
                       fmaps=fmaps, 
                       downsample_factors=downsample_factors,
                       fmap_inc=fmap_inc,
                       n_convolutions=n_convolutions,
-                      output_classes=len(synapse_types))
+                      output_classes=output_classes)
     else: 
         raise NotImplementedError("Only VGG available")
 
@@ -92,9 +96,31 @@ def train_until(max_iteration,
 
         for t in synapse_types
     )
+    if neither_class:
+        neither_sources = (
+            (
+                fafb_source, 
+                # just provide some synapses, doesn't matter which ones
+                SynapseSourceMongo(
+                    db_credentials,
+                    db_name_data,
+                    split_name,
+                    ('gaba',),  # doesn't matter
+                    synapses),
+                SynapseTypeSource(synapse_types, -1, synapse_type)
+            ) + 
+            MergeProvider() + 
+            RandomLocation()
+        )
+
+        sources = sample_sources + (neither_sources,)
+    else:
+        sources = sample_sources
+
+
 
     pipeline = (
-        sample_sources +
+        sources +
         RandomProvider() +
         ElasticAugment(
             control_point_spacing=[4,40,40],

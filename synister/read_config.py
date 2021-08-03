@@ -30,6 +30,13 @@ def read_predict_config(predict_config):
     cfg_dict["experiment"] = config.get("Predict", "experiment")
     cfg_dict["train_number"] = config.getint("Predict", "train_number")
     cfg_dict["predict_number"] = config.getint("Predict", "predict_number")
+
+    if config.get("Predict", "neither_class") == "True":
+        cfg_dict["neither_class"] = True
+    else:
+        cfg_dict["neither_class"] = False
+
+
     try:
         cfg_dict["split_part"] = config.get("Predict", "split_part")
     except:
@@ -80,6 +87,11 @@ def read_train_config(train_config):
     cfg_dict["voxel_size"] = tuple([int(v) for v in config.get("Training", "voxel_size").split(", ")])
     cfg_dict["raw_container"] = config.get("Training", "raw_container")
     cfg_dict["raw_dataset"] = config.get("Training", "raw_dataset")
+
+    if config.get("Training", "neither_class") == "True":
+        cfg_dict["neither_class"] = True
+    else:
+        cfg_dict["neither_class"] = False
 
     downsample_factors = config.get("Training", "downsample_factors")
     downsample_factors = [s.strip("(").strip(")").split(",") for s in downsample_factors.split("), ")]
