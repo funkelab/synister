@@ -26,11 +26,11 @@ def train_until(max_iteration,
                 voxel_size,
                 raw_container,
                 raw_dataset,
+                neither_class,
                 network="VGG",
                 fmap_inc=(2,2,2,2),
                 n_convolutions=(2,2,2,2),
-                network_appendix="b0",
-                neither_class):
+                network_appendix="b0"):
 
     input_shape = Coordinate(input_shape)
 
