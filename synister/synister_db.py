@@ -238,24 +238,29 @@ class SynisterDb(object):
         db = self.__get_db()
         db[old_collection].rename(new_collection)
 
-    def write(self, synapses=None, skeletons=None, hemi_lineages=None, metas=None):
+    def write(
+            self,
+            synapses=None,
+            skeletons=None,
+            hemi_lineages=None,
+            metas=None,
+            overwrite=False):
+
         db = self.__get_db()
-        if synapses is not None and synapses:
-            synapse_documents = [self.__generate_synapse(**synapse) for synapse in synapses]
-            synapse_collection = db["synapses"]
-            synapse_collection.insert_many(synapse_documents)
-        if skeletons is not None and skeletons:
-            skeleton_documents = [self.__generate_skeleton(**skeleton) for skeleton in skeletons]
-            skeleton_collection = db["skeletons"]
-            skeleton_collection.insert_many(skeleton_documents)
-        if hemi_lineages is not None and hemi_lineages:
-            hemi_lineage_documents = [self.__generate_hemi_lineage(**hemi_lineage) for hemi_lineage in hemi_lineages]
-            hemi_lineage_collection = db["hemi_lineages"]
-            hemi_lineage_collection.insert_many(hemi_lineage_documents)
-        if metas is not None and metas:
-            meta_documents = [self.__generate_meta(**meta) for meta in metas]
-            meta_collection = db["meta"]
-            meta_collection.insert_many(meta_documents)
+
+        if overwrite:
+            db['synapses'].delete_many({})
+            db['skeletons'].delete_many({})
+            db['hemi_lineages'].delete_many({})
+
+        if synapses is not None:
+            db['synapses'].insert_many(synapses)
+        if skeletons is not None:
+            db['skeletons'].insert_many(skeletons)
+        if hemi_lineages is not None:
+            db['hemi_lineages'].insert_many(hemi_lineages)
+        if metas is not None:
+            db['meta'].insert_many(metas)
 
     def validate_synapses(self):
         db = self.__get_db()
