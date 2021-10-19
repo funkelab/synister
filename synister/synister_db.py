@@ -715,7 +715,7 @@ class SynisterDb(object):
         db = self.__get_db()
         synapse_collection = db["synapses"]
 
-        synapse_collection.update_many({}, {"$set": {"splits": {"init": "None"}}})
+        synapse_collection.update_many({}, {"$set": {"splits": {}}})
 
     def make_split(self,
                    split_name,
