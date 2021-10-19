@@ -728,15 +728,24 @@ class SynisterDb(object):
         db = self.__get_db()
         synapse_collection = db["synapses"]
 
-        synapse_collection.update_many({"synapse_id": {"$in": train_synapse_ids}},
-                             {"$set": {"splits.{}".format(split_name): "train"}})
+        def chunk_apply(x, func, chunk_size=250_000):
+            for start in range(0, len(x), chunk_size):
+                end = min(start + chunk_size, len(x))
+                chunk = x[start:end]
+                func(chunk)
 
-        synapse_collection.update_many({"synapse_id": {"$in": test_synapse_ids}},
-                             {"$set": {"splits.{}".format(split_name): "test"}})
+        chunk_apply(train_synapse_ids,
+            lambda x: synapse_collection.update_many({"synapse_id": {"$in": x}},
+                             {"$set": {"splits.{}".format(split_name): "train"}}))
+
+        chunk_apply(test_synapse_ids,
+            lambda x: synapse_collection.update_many({"synapse_id": {"$in": x}},
+                             {"$set": {"splits.{}".format(split_name): "test"}}))
 
         if validation_synapse_ids is not None:
-            synapse_collection.update_many({"synapse_id": {"$in": validation_synapse_ids}},
-                                           {"$set": {"splits.{}".format(split_name): "validation"}})
+            chunk_apply(validation_synapse_ids,
+                lambda x: synapse_collection.update_many({"synapse_id": {"$in": x}},
+                                           {"$set": {"splits.{}".format(split_name): "validation"}}))
 
     def remove_split(self,
                      split_name):
