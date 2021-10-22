@@ -685,7 +685,7 @@ class SynisterDb(object):
         # Update prediction:
         synapse_in_db = self.get_synapses(positions=[(z,y,x)])
 
-        assert(len(synapse_in_db) == 1)
+        assert(len(synapse_in_db) == 1), f"Synapse at ({z}, {y}, {x}) not found in DB"
         synapse_id = list(synapse_in_db.keys())[0]
 
         result = predictions.update_one({"synapse_id": synapse_id},

@@ -1,3 +1,4 @@
+from .redirect_stdout import stdout_redirected
 import pylp
 
 def find_optimal_split(synapse_ids,
@@ -201,17 +202,20 @@ def find_optimal_split(synapse_ids,
         variable_types[slack_l[nt]] = pylp.VariableType.Integer
         variable_types[sum_synapses[nt]] = pylp.VariableType.Integer
 
-    solver = pylp.LinearSolver(
-        num_variables,
-        pylp.VariableType.Binary,
-        variable_types,
-        preference=pylp.Preference.Any)
+    # silence solver
+    with stdout_redirected():
 
-    solver.set_objective(objective)
-    solver.set_constraints(constraints)
-    solution, msg = solver.solve()
+        solver = pylp.LinearSolver(
+            num_variables,
+            pylp.VariableType.Binary,
+            variable_types,
+            preference=pylp.Preference.Any)
 
-    print(msg)
+        solver.set_objective(objective)
+        solver.set_constraints(constraints)
+        solution, msg = solver.solve()
+
+    # print(msg)
 
     train_synapses_by_ss = {}
     test_synapses_by_ss = {}
@@ -234,7 +238,7 @@ def find_optimal_split(synapse_ids,
                         train_synapses_by_ss[ss] = []
 
                     train_synapses_by_ss[ss].extend(synapses_by_superset_and_nt[(ss,nt)])
-                    print('+', ss)
+                    # print('+', ss)
                 else:
                     if ss in list(test_synapses_by_ss):
                         pass
@@ -242,6 +246,6 @@ def find_optimal_split(synapse_ids,
                         test_synapses_by_ss[ss] = []
 
                     test_synapses_by_ss[ss].extend(synapses_by_superset_and_nt[(ss,nt)])
-                    print('-', ss)
+                    # print('-', ss)
 
     return train_synapses_by_ss, test_synapses_by_ss
