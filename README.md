@@ -15,7 +15,7 @@ make
 ```
 2. Conda
 ```
-conda create -n synister python=3.6 numpy scipy cython pylp -c funkey
+conda create -n synister -c conda-forge -c funkey python numpy scipy cython pylp pytorch-gpu
 conda activate synister
 pip install -r requirements.txt
 pip install .
