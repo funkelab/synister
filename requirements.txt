@@ -8,7 +8,7 @@ ConfigArgParse
 pymongo
 iteration_utilities
 tqdm
-notebook==6.1.4
+notebook==6.4.1
 zarr
 git+git://github.com/nilsec/pymaid@master
 -e git+https://github.com/funkey/gunpowder@754607abcd3c84ec28c0d2ea257b969934ce986d#egg=gunpowder
