@@ -1,6 +1,20 @@
 from .redirect_stdout import stdout_redirected
 import pylp
 
+
+class ImpossibleSplit(RuntimeError):
+
+    def __init__(self, optimal_fraction, target_fraction, nt):
+
+        self.optimal_fraction = optimal_fraction
+        self.target_fraction = target_fraction
+        self.nt = nt
+
+        super().__init__(
+            f"Optimal fraction {optimal_fraction} deviates more than 5% "
+            f"from target fraction {target_fraction} for NT {nt}")
+
+
 def find_optimal_split(synapse_ids,
                        superset_by_synapse_id,
                        nt_by_synapse_id,
@@ -222,11 +236,18 @@ def find_optimal_split(synapse_ids,
 
     for nt in neurotransmitters:
 
+        num_split_synapses = solution[sum_synapses[nt]]
+        num_synapses = len(synapse_ids_by_nt[nt])
+        optimal_fraction = float(num_split_synapses)/num_synapses
+        target_fraction = train_fraction
+
         print(
-            nt,
-            float(solution[sum_synapses[nt]])/len(synapse_ids_by_nt[nt]), "% ",
-            solution[sum_synapses[nt]], '/', len(synapse_ids_by_nt[nt]),
-            '(', target[nt], ')')
+            f"{nt}: found optimal fraction {optimal_fraction}% "
+            f" = {num_split_synapses}/{num_synapses} "
+            f"(target was {target_fraction}% = {target[nt]})")
+
+        if abs(optimal_fraction - target_fraction) > 0.05:
+            raise ImpossibleSplit(optimal_fraction, target_fraction, nt)
 
         for ss in supersets:
             if len(synapses_by_superset_and_nt[(ss, nt)]) > 0:
