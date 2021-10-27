@@ -7,32 +7,32 @@ import pandas as pd
 import statistics
 import os
 
-def parse_prediction(db_credentials,
-                     predict_config_path):
+def parse_prediction(predict_config):
 
-    predict_cfg = read_predict_config(predict_config_path)
-    db = SynisterDb(db_credentials, predict_cfg["db_name_data"])
+    db = SynisterDb(
+        predict_config["db_credentials"],
+        predict_config["db_name_data"])
 
-    predictions = db.get_predictions(predict_cfg["split_name"],
-                                     predict_cfg["experiment"],
-                                     predict_cfg["train_number"],
-                                     predict_cfg["predict_number"])
+    predictions = db.get_predictions(
+        predict_config["split_name"],
+        predict_config["experiment"],
+        predict_config["train_number"],
+        predict_config["predict_number"])
 
     synapses = db.get_synapses()
     skeletons = db.get_skeletons()
 
-    predicted_synapses =\
-    {
-            synapse_id: 
+    predicted_synapses = {
+            synapse_id:
             {
-                **{"prediction": prediction["prediction"]}, 
-                **synapses[synapse_id], 
+                **{"prediction": prediction["prediction"]},
+                **synapses[synapse_id],
                 **skeletons[synapses[synapse_id]["skeleton_id"]]
                 }
             for synapse_id, prediction in predictions.items()
     }
 
-    return predicted_synapses, predict_cfg
+    return predicted_synapses
 
 def synaptic_cross_confusion_matrix(synapses_target, synapses_source, 
                                     predict_config, normalize=False):
