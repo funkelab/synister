@@ -25,16 +25,18 @@ def monitor_prediction(
         predict_config["predict_number"])
 
     start = time.time()
-    done_interval = []
-    exit = False
 
-    while not exit:
+    while True:
 
         done, total = db.count_predictions(
             predict_config["split_name"],
             predict_config["experiment"],
             predict_config["train_number"],
             predict_config["predict_number"])
+
+        if done == total:
+            print("All predictions done.")
+            return
 
         time_elapsed = time.time() - start
         if done - done_0 > 0:
@@ -47,10 +49,6 @@ def monitor_prediction(
         print("Time elapsed {}".format(time_elapsed))
         print("{} samples/second".format(sps))
         print("ETA: {}".format(eta))
-        done_interval.append(done)
-        if len(done_interval) > 5:
-            if all(map(lambda x: x == done_interval[-1], done_interval[-4:])):
-                exit = True
 
         time.sleep(interval)
 
