@@ -111,6 +111,7 @@ def test(worker_id,
     loc_end = int(float(worker_id + 1)/num_block_workers * len(locations))
     my_locations = locations[loc_start:loc_end]
 
+    logger.info(f"Predicting {len(my_locations)} locations...")
     for i in range(0, len(my_locations), batch_size):
         logger.info('Predict location {}/{}'.format(i, len(my_locations)))
         locs = my_locations[i:i+batch_size]
@@ -136,8 +137,14 @@ def test(worker_id,
 
             prediction_queue.put(data_synapse)
 
+    # signal end of data
+    logger.info("Signalling end of data to prediction writers")
+    for _ in range(num_cache_workers):
+        prediction_queue.put(None)
+
     logger.info("Wait for write...")
     prediction_queue.join()
+    logger.info("Done.")
 
 
 def prediction_writer(prediction_queue,
@@ -148,11 +155,17 @@ def prediction_writer(prediction_queue,
                       train_number,
                       predict_number):
 
+    logger.info("Starting prediction writer thread")
 
     db = SynisterDb(db_credentials, db_name_data)
     
     while True:
         data_synapse = prediction_queue.get()
+
+        if data_synapse is None:
+            logger.info("No more locations to predict, stopping prediction writer")
+            prediction_queue.task_done()
+            break
 
         db.write_prediction(split_name,
                             data_synapse["prediction"],
@@ -165,6 +178,7 @@ def prediction_writer(prediction_queue,
 
         prediction_queue.task_done()
 
+    logger.info("Prediction writer thread stopped")
 
 if __name__ == "__main__":
 
