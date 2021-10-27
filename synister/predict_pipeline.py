@@ -1,16 +1,18 @@
-import os
-import json
-import numpy as np
-import torch
-
-from synister.utils import init_vgg, predict, get_raw
-from synister.synister_db import SynisterDb
-from synister.read_config import read_predict_config, read_worker_config
 from funlib.learn.torch.models import Vgg3D
-
+from synister.read_config import \
+    read_worker_config, \
+    read_predict_config, \
+    read_train_config
+from synister.synister_db import SynisterDb
+from synister.utils import init_vgg, predict, get_raw
+import json
 import logging
 import multiprocessing
+import numpy as np
+import os
 import sys
+import torch
+
 
 logger = logging.getLogger(__name__)
 self_path = os.path.realpath(os.path.dirname(__file__))
@@ -165,11 +167,27 @@ def prediction_writer(prediction_queue,
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    worker_id = int(sys.argv[1])
-    num_block_workers = int(sys.argv[2])
 
-    predict_config = read_predict_config(os.path.join(self_path, "predict_config.ini"))
+    logging.basicConfig(level=logging.INFO)
+    iteration = int(sys.argv[1])
+    worker_id = int(sys.argv[2])
+    num_block_workers = int(sys.argv[3])
+
+    predict_config = read_predict_config(
+        os.path.join(self_path, "predict_config.ini"))
+    train_number = predict_config['train_number']
+    setup_dir = os.path.join(
+        predict_config['train_dir'],
+        f'setup_t{train_number}')
+    train_config = read_train_config(
+        os.path.join(setup_dir, 'train_config.ini'))
+    del train_config['batch_size']  # don't overwrite prediction batch size
+    predict_config.update(train_config)
+    predict_config['train_checkpoint'] = os.path.join(
+        setup_dir,
+        f'model_checkpoint_{iteration}')
+    predict_config['predict_number'] = iteration
+
     worker_config = read_worker_config(os.path.join(self_path, "worker_config.ini"))
     worker_config["worker_id"] = worker_id
     worker_config["num_block_workers"] = num_block_workers

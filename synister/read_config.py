@@ -9,63 +9,20 @@ def read_predict_config(predict_config):
     config.read(predict_config)
 
     cfg_dict = {}
-    tmp = [s for s in config.get("Predict", "synapse_types").split(", ")]
-    synapse_types = []
-    for s in tmp:
-        if s == "None":
-            s = None
-        synapse_types.append(s)
-    cfg_dict["synapse_types"] = synapse_types
-
-    cfg_dict["input_shape"] = tuple([int(c) for c in config.get("Predict", "input_shape").split(", ")])
-    cfg_dict["fmaps"] = config.getint("Predict", "fmaps")
     cfg_dict["batch_size"] = config.getint("Predict", "batch_size")
-    cfg_dict["db_credentials"] = config.get("Predict", "db_credentials")
-    cfg_dict["db_name_data"] = config.get("Predict", "db_name_data")
-    cfg_dict["split_name"] = config.get("Predict", "split_name")
-    cfg_dict["voxel_size"] = tuple([int(v) for v in config.get("Predict", "voxel_size").split(", ")])
-    cfg_dict["raw_container"] = config.get("Predict", "raw_container")
-    cfg_dict["raw_dataset"] = config.get("Predict", "raw_dataset")
-    cfg_dict["train_checkpoint"] = config.get("Predict", "train_checkpoint")
+    cfg_dict["train_dir"] = config.get("Predict", "train_dir")
+    cfg_dict["iterations"] = map(
+        int,
+        config.get("Predict", "iterations").split(','))
     cfg_dict["experiment"] = config.get("Predict", "experiment")
     cfg_dict["train_number"] = config.getint("Predict", "train_number")
-    cfg_dict["predict_number"] = config.getint("Predict", "predict_number")
-
-    if config.get("Predict", "neither_class") == "True":
-        cfg_dict["neither_class"] = True
-    else:
-        cfg_dict["neither_class"] = False
-
-
     try:
         cfg_dict["split_part"] = config.get("Predict", "split_part")
     except:
         cfg_dict["split_part"] = None
-    downsample_factors = config.get("Predict", "downsample_factors")
-    downsample_factors = [s.strip("(").strip(")").split(",") for s in downsample_factors.split("), ")]
-    cfg_dict["downsample_factors"] = []
-    for factor in downsample_factors:
-        f = tuple([int(k) for k in factor])
-        cfg_dict["downsample_factors"].append(f)
     cfg_dict["overwrite"] = config.get("Predict", "overwrite") == "True"
-
     try:
         cfg_dict["network"] = config.get("Predict", "network")
-    except:
-        pass
-
-    try:
-        cfg_dict["fmap_inc"] = tuple([int(v) for v in config.get("Predict", "fmap_inc").split(", ")])
-    except:
-        pass
-
-    try:
-        cfg_dict["n_convolutions"] = tuple([int(v) for v in config.get("Predict", "n_convolutions").split(", ")])
-    except:
-        pass
-
-    try:
-        cfg_dict["network_appendix"] = config.get("Predict", "network_appendix")
     except:
         pass
 
