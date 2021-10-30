@@ -91,7 +91,9 @@ def skeleton_cross_confusion_matrix(synapses_target, synapses_source, predict_co
     return cm
 
 def expected_probability_matrix(synapses, predict_config):
-    synapse_types = predict_config["synapse_types"]
+    synapse_types = list(predict_config["synapse_types"])
+    if predict_config['neither_class']:
+        synapse_types += ['neither']
     
     expected_probability = {st: np.zeros(len(synapse_types)) for st in synapse_types}
     samples_per_type = {st: 0 for st in synapse_types}
@@ -120,7 +122,9 @@ def expected_probability_matrix(synapses, predict_config):
     return confusion_matrix
 
 def synaptic_confusion_matrix(synapses, predict_config, normalization_factor=None, normalize=False, n_min=None):
-    synapse_types = predict_config["synapse_types"]
+    synapse_types = list(predict_config["synapse_types"])
+    if predict_config['neither_class']:
+        synapse_types += ['neither']
     cm = np.zeros([len(synapse_types)] * 2, dtype=float)
 
     if normalization_factor is None:
