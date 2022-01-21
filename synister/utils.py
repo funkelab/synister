@@ -135,9 +135,9 @@ def get_raw(locs,
 
         if not dataset.roi.contains(roi):
             logger.warning(f"Location {loc} is not fully contained in dataset")
-            return None, None
-
-        raw.append(dataset[roi].to_ndarray())
+            raw.append(dataset.to_ndarray(roi=roi, fill_value=0))
+        else:
+            raw.append(dataset[roi].to_ndarray())
 
     raw = np.stack(raw)
     raw = raw.astype(np.float32)
