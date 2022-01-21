@@ -45,7 +45,7 @@ def read_train_config(train_config):
     cfg_dict["raw_container"] = config.get("Training", "raw_container")
     cfg_dict["raw_dataset"] = config.get("Training", "raw_dataset")
 
-    if config.get("Training", "neither_class") == "True":
+    if config.get("Training", "neither_class", fallback="False") == "True":
         cfg_dict["neither_class"] = True
     else:
         cfg_dict["neither_class"] = False
