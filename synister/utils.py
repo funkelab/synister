@@ -134,7 +134,7 @@ def get_raw(locs,
             roi.set_shape(size_nm)
 
         if not dataset.roi.contains(roi):
-            logger.warning("Location %s is not fully contained in dataset" % loc)
+            logger.warning(f"Location {loc} is not fully contained in dataset")
             return None, None
 
         raw.append(dataset[roi].to_ndarray())
@@ -197,7 +197,7 @@ def fetch_from_ds(dataset, loc, voxel_size, size, size_nm):
         roi.set_shape(size_nm)
 
     if not dataset.roi.contains(roi):
-        logger.WARNING("Location %s is not fully contained in dataset" % loc)
+        logger.warning(f"Location {loc} is not fully contained in dataset")
         return None
 
     return dataset[roi].to_ndarray()
