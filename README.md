@@ -14,7 +14,7 @@ following two datasets:
 
 We used our method to predict the neurotransmitter identity of all annotated
 synapses in the [FAFB](https://temca2data.org/) volume. Our predictions are
-available through [FlyWire](https://flywire.ai/).
+available through [FlyWire](https://codex.flywire.ai/).
 
 ### HemiBrain
 
