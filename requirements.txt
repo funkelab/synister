@@ -8,6 +8,7 @@ ConfigArgParse
 pymongo
 iteration_utilities
 tqdm
+tensorboardX
 notebook==6.1.4
 zarr
 git+git://github.com/nilsec/pymaid@master
