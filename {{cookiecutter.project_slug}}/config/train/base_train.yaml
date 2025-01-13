@@ -1,0 +1,11 @@
+log_every: 100
+num_iterations: 100000
+batch_size: 8
+save_every: 10000
+snapshot_every: 10000
+learning_rate: 0.0001
+num_cache_workers: 12
+container: ${data.container}
+dataset: ${data.dataset}
+voxel_size: ${data.voxel_size}
+num_transmitters: ${gt.num_transmittters}

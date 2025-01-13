@@ -1,0 +1,6 @@
+__target__: monai.networks.nets.EfficientNetBN
+name: efficientnet-b0
+pretrained: False
+spatial_dims: 3
+in_channels: 1
+output_classes: ???  # This is a placeholder for the number of output classes

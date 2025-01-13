@@ -1,0 +1,6 @@
+__target__: funlib.learn.torch.models.Vgg3D
+name: vgg
+input_shape: (80, 80, 80)
+fmaps: 32
+downsample_factors: [[2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2]]
+output_classes: ${gt.num_transmitters} # number of neurotransmitters, interpolated from main config file

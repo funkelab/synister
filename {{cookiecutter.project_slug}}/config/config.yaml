@@ -1,0 +1,22 @@
+defaults: 
+  - _self_
+  - model: vgg # choose model, see options under config/model
+  - data: male_cns # choose data, see options under config/data, or make your own
+  - train: base_train  # choose training config, see options under config/train, or make your own
+
+gt:
+  base: ??? # TODO specify the feather file containing all the ground truth
+  train: ??? # TODO specify the place to save the ground truth training set
+  val: ??? # TODO specify the place to save the ground truth validation set
+  num_transmitters: ??? # TODO specify the number of neurotransmitters
+  body_id: "body" # TODO specify the column name for the body id
+  nt_name: "nt_name" # TODO specify the column name for the neurotransmitter name
+  point_id: "point_id" # TODO specify the column name for the point id
+  x_col: "x" # TODO specify the column name for the x coordinate
+  y_col: "y" # TODO specify the column name for the y coordinate
+  z_col: "z" # TODO specify the column name for the z coordinate
+  
+
+hydra: 
+  run: 
+    dir: ??? # TODO specify the path to save the run results, will also be used to store checkpoints etc.

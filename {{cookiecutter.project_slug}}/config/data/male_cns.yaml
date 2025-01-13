@@ -1,0 +1,4 @@
+data:
+  container: "/nrs/flyem/render/n5/Z0720_07m_CNS-dvid-coords.n5"
+  dataset: "s0"
+  voxel_size: [8, 8, 8]
