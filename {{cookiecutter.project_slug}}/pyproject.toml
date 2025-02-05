@@ -1,6 +1,7 @@
 [project]
-name = "malecns"
-description = "Neurotransmitter prediction for the Male CNS of D.melanogaster"
+name = {{cookiecutter.project_slug}}
+description = {{cookiecutter.project_description}}
+version = {{cookiecutter.project_version}}
 readme = "README.md"
 requires-python = ">=3.11,<3.19"
 dependencies = [
@@ -17,7 +18,6 @@ dependencies = [
     "scikit-learn",
     "matplotlib",
 ]
-version = "0.1.0"
 
 [tool.pixi.project]
 channels = ["https://prefix.dev/conda-forge"]

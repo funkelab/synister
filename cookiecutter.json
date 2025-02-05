@@ -1,5 +1,7 @@
 {
     "project_name": "datasetname",
     "project_slug": "synister_{{cookiecutter.project_name.lower().replace(' ', '_')}}",
+    "project_description": "A short description of the project.",
+    "project_version": "0.1.0",
     "author": "Anonymous"
 }
