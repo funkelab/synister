@@ -1,0 +1,21 @@
+defaults: 
+  - _self_
+  - model: vgg
+  - data: male_cns
+  - train: base_train
+
+gt:
+  base: /groups/flyem/data/scratchspace/flyemflows/cns-full/neurotransmitters/malecns-tbars-neurotransmitter-groundtruth-2024-12-17.feather
+  train: /nrs/funke/adjavond/projects/malecns/ground_truth/train_gt.feather
+  val: /nrs/funke/adjavond/projects/malecns/ground_truth/val_gt.feather
+  num_transmitters: 7
+  body_id: "body"
+  nt_name: "nt_name"
+  point_id: "point_id"
+  x_col: "x"
+  y_col: "y"
+  z_col: "z"
+  
+
+train: 
+  experiment_dir: /nrs/funke/adjavond/projects/malecns/${now:%Y-%m-%d_%H-%M-%S}_${model.name}
