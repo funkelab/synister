@@ -8,7 +8,7 @@ import hydra
 
 
 def split_data(
-    base: str = "/groups/flyem/data/scratchspace/flyemflows/cns-full/neurotransmitters/malecns-tbars-neurotransmitter-groundtruth-2024-12-17.feather",
+    base: str = "",
     val_size: float = 0.2,
     random_state: int = 42,
     train: str = None,
