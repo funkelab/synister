@@ -1,10 +1,9 @@
 import pandas as pd
-import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
-from pathlib import Path
 import logging
 from omegaconf import DictConfig
 import hydra
+from typing import Optional
 
 
 def split_data(
@@ -17,6 +16,9 @@ def split_data(
     nt_name: str = "nt_name",
     point_id: str = "point_id",
     num_neurotransmitters: int = 6,
+    z_col: Optional[str] = None,
+    y_col: Optional[str] = None,
+    x_col: Optional[str] = None,
 ):
     """
     Split the ground truth data into training and validation sets, stratified by neurotransmitter type.
@@ -43,6 +45,8 @@ def split_data(
         Number of neurotransmitters in the data. Used to check if the data is correct.
     """
     gt = pd.read_feather(base)
+    # Make sure that the required columns are present
+    assert all([col in gt.columns for col in [body_id, nt_name, point_id, x_col, y_col, z_col]])
     # Print some basic information
     logging.info(f"Total number of synapses: {len(gt)}")
     logging.info(gt.nt_name.value_counts())
@@ -70,8 +74,13 @@ def split_data(
     assert len(val_gt.nt_name.unique()) == num_neurotransmitters
     for df in [train_gt, val_gt]:
         # Convert the neurotransmitter names to integers
-        df["neurotransmitter"] = df["nt_name"].astype("category").cat.codes
-    # TODO ensure that z,y,x columns are called "z", "y", "x"
+        df["neurotransmitter"] = df[nt_name].astype("category").cat.codes
+
+    # Ensure that z,y,x columns are called "z", "y", "x"
+    rename = { x_col: "x", y_col: "y", z_col: "z" }
+    train_gt = train_gt.rename(columns=rename)
+    val_gt = val_gt.rename(columns=rename) 
+
     # Save
     if train is not None:
         logging.info(f"Saving the training set to {train}")

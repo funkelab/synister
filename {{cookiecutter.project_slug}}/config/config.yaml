@@ -1,7 +1,7 @@
 defaults: 
   - _self_
   - model: vgg # choose model, see options under config/model
-  - data: male_cns # choose data, see options under config/data, or make your own
+  - data: ??? # choose data, see options under config/data, or make your own
   - train: base_train  # choose training config, see options under config/train, or make your own
 
 gt:
