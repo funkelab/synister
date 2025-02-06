@@ -86,6 +86,7 @@ def train(
     dataset: str = None,
     voxel_size=(8, 8, 8),
     num_transmitters: int = 3,
+    coordinate_order: str = "zyx",
 ):
     """
     Train a classifier model on the synapse data.
@@ -114,6 +115,8 @@ def train(
         Voxel size of the input data.
     lr : float
         Learning rate.
+    coordinate_order : str
+        Order of the coordinates to use, e.g. "zyx" or "xyz".
     """
     # Directories
     log_dir = experiment_dir / "logs"
@@ -162,7 +165,7 @@ def train(
         # Get coordinates of a certain transmitter type
         synapse_locations = df[df["neurotransmitter"] == neurotransmitter]
         #
-        coordinates = synapse_locations[["z", "y", "x"]]
+        coordinates = synapse_locations[list(coordinate_order)]
         locations = coordinates.values
 
         neurotransmitter_source = gp.ZarrSource(
@@ -184,6 +187,10 @@ def train(
 
     # _________________________________Rest of Process______________________________________
     pipeline += gp.Normalize(raw)
+    # NOTE: We do not use a elastic/deformation augmentation here
+    # This is because this augmentation is slow, and we assume that there are enough
+    # separate data points to learn from.
+    # In case you have a small dataset, you might want to add this augmentation.
     # pipeline += gp.DeformAugment(
     #     control_point_spacing=(40, 40, 40),
     #     jitter_sigma=(5.0, 5.0, 5.0),

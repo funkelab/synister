@@ -17,6 +17,5 @@ gt:
   z_col: "z" # TODO specify the column name for the z coordinate
   
 
-hydra: 
-  run: 
-    dir: ??? # TODO specify the path to save the run results, will also be used to store checkpoints etc.
+train: 
+  experiment_dir: ??? # TODO specify the path to save the run results, will also be used to store checkpoints etc.
