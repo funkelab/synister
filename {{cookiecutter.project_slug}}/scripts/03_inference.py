@@ -12,9 +12,30 @@ from torch import nn
 
 
 class ZarrDataset(torch.utils.data.Dataset):
-    def __init__(self, zarr_array, locations, ids, shape=(64, 64, 64), transform=None):
+    def __init__(self, zarr_array, locations, ids, shape=(64, 64, 64), transform=None, voxel_size=None):
+        """
+        Torch dataset getting locations from a zarr array.
+
+        Parameters
+        ----------
+        zarr_array : zarr.core.Array
+            Zarr array containing the data.
+        locations : np.ndarray
+            Array of locations to extract from the zarr array, assumed to be in the same order as the zarr array.
+            So, if the zarr array is organized as (z, y, x), the locations should be in the same order.
+        ids : np.ndarray
+            Array of identifiers for the locations.
+        shape : tuple
+            Shape of the output array. The dataset will return a crop, centered at the location, of this shape.
+        transform : callable
+            Transform to apply to the data.
+        voxel_size : tuple
+            Voxel size of the data. If None, we assume isotropic data, and locations in voxel coordinates.
+            If not None, we assume locations in world coordinates - the locations will be rounded to the nearest voxel.
+        """
         self.zarr_array = zarr_array
         self.locations = locations
+        self.voxel_size = voxel_size
         self.ids = ids
         assert len(locations) == len(ids)
         self.shape = shape
@@ -22,9 +43,17 @@ class ZarrDataset(torch.utils.data.Dataset):
 
     def __len__(self):
         return len(self.locations)
+    
+    def _voxel_location(self, location):
+        """
+        Convert a location in world coordinates to voxel coordinates.
+        """
+        if self.voxel_size is None:
+            return location
+        return np.round(location / self.voxel_size).astype(int)
 
     def __getitem__(self, idx):
-        center = self.locations[idx]
+        center = self._voxel_location(self.locations[idx])
         corner = center - (np.array(self.shape) // 2)
         array = np.array(
             self.zarr_array[
@@ -75,6 +104,8 @@ def validate(
     num_partitions: int = 1,
     partition_id: int = 1,
     output_dir: str = None,
+    class_names_ordered=None,
+    voxel_size=None,
 ):
     """
     Run prediction on validation data.
@@ -113,7 +144,12 @@ def validate(
     partition_id : int
         ID of the partition to validate (1-indexed).
     output_dir : str
-        Directory to store the evaluation results in.
+        Directory to store the evaluation results in. 
+        If None, the results are stored in the experiment directory.
+    class_names_ordered : list
+        List of class names in the order they are output by the model.
+        If None, we expect the data to have ground truth transmitter names.
+        In that case, we will order them alphabetically.
     """
     # Metadata
     experiment_dir = Path(experiment_dir)
@@ -130,7 +166,6 @@ def validate(
     # Load the validation ground truth
     logging.info("Reading data...")
     df = pd.read_feather(val_gt_location)
-    # TODO take into account the voxel size?
     # Get coordinate locations
     locations = df[["z", "y", "x"]].values
     point_ids = df[point_id].values
@@ -138,16 +173,8 @@ def validate(
     if nt_name is not None:
         class_names_ordered = sorted(df[nt_name].unique())
         assert len(class_names_ordered) == num_transmitters
-    else:
-        class_names_ordered = [
-            "acetylcholine",
-            "dopamine",
-            "gaba",
-            "glutamate",
-            "histamine",
-            "octopamine",
-            "serotonin",
-        ]
+    elif class_names_ordered is None:
+        raise ValueError("class_names_ordered must be provided if nt_name is None")
 
     # Split the validation data into partitions
     partition_suffix = ''
@@ -184,7 +211,7 @@ def validate(
     transform = Transform(mean=0.5, std=0.5, max_value=max_value)
 
     zarr_dataset = ZarrDataset(
-        z, locations, point_ids, shape=input_shape, transform=transform
+        z, locations, point_ids, shape=input_shape, transform=transform, voxel_size=voxel_size
     )
     dataloader = torch.utils.data.DataLoader(
         zarr_dataset,
