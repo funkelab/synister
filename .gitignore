@@ -1,2 +1,4 @@
 *.pyc
 **/pixi.lock
+**.hydra/
+**/outputs

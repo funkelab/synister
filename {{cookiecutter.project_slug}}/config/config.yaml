@@ -38,4 +38,4 @@ validate:
   num_partitions: 10
   partition_id: 1
   output_dir: ??? # TODO specify the path to save the validation results, optional
-  spatial_order: ${data.spatial_order}
+  spatial_order: ${oc.select:data.spatial_order,"zyx"}
