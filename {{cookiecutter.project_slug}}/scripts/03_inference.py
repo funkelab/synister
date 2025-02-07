@@ -253,7 +253,7 @@ def validate(
         save_output(results, identifiers, class_names_ordered, output_file)
         logging.info(f"Intermediate results saved to {output_file}")
 
-@hydra.main(config_path="../config", config_name="validate")
+@hydra.main(config_path="../config", config_name="config")
 def main(cfg: DictConfig):
     logging.basicConfig(
         level=logging.INFO,
@@ -267,25 +267,12 @@ def main(cfg: DictConfig):
     # training data
     validation_data = cfg.gt.val
 
-    num_partitions = 1
-    partition_id = 1
-    if "num_partitions" in cfg:
-        num_partitions = cfg.num_partitions
-    if "partition_id" in cfg:
-        partition_id = cfg.partition_id
-    output_dir = None
-    if "output_dir" in cfg:
-        output_dir = cfg.output_dir
-
     # run validation
     validate(
         model=model,
         # Get the data location
         val_gt_location=validation_data,
         **cfg.validate,
-        num_partitions=num_partitions,
-        partition_id=partition_id,
-        output_dir=output_dir,
     )
 
 

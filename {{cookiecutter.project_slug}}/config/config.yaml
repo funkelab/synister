@@ -19,3 +19,22 @@ gt:
 
 train: 
   experiment_dir: ??? # TODO specify the path to save the run results, will also be used to store checkpoints etc.
+  input_shape: # TODO specify the input shape of the model
+    - ???
+    - ???
+    - ???
+
+validate: 
+  batch_size: ???
+  container: ${data.container}
+  dataset: ${data.dataset}
+  num_transmitters: ${gt.num_transmitters}
+  experiment_dir: ${train.experiment_dir}
+  checkpoint_number: ???
+  input_shape: ${train.input_shape}
+  num_workers: 12
+  nt_name: ${gt.nt_name}
+  point_id: ${gt.point_id}
+  num_partitions: 10
+  partition_id: 1
+  output_dir: ??? # TODO specify the path to save the validation results, optional
