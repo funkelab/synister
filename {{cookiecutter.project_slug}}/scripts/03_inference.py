@@ -106,6 +106,7 @@ def validate(
     output_dir: str = None,
     class_names_ordered=None,
     voxel_size=None,
+    spatial_order="zyx"
 ):
     """
     Run prediction on validation data.
@@ -150,6 +151,11 @@ def validate(
         List of class names in the order they are output by the model.
         If None, we expect the data to have ground truth transmitter names.
         In that case, we will order them alphabetically.
+    voxel_size : tuple
+        Voxel size of the data. If None, we assume isotropic data, and locations in voxel coordinates.
+        If not None, we assume locations in world coordinates - the locations will be rounded to the nearest voxel.
+    spatial_order : str
+        Order of the spatial dimensions in the data. Default is "zyx". Options are "zyx", "xyz", "zxy", "yxz", "xzy".
     """
     # Metadata
     experiment_dir = Path(experiment_dir)
@@ -167,7 +173,7 @@ def validate(
     logging.info("Reading data...")
     df = pd.read_feather(val_gt_location)
     # Get coordinate locations
-    locations = df[["z", "y", "x"]].values
+    locations = df[list(spatial_order)].values
     point_ids = df[point_id].values
     # Get the class names ordered
     if nt_name is not None:
