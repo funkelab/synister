@@ -254,14 +254,12 @@ def main(cfg: DictConfig):
     # Remove logging from gunpowder
     logging.getLogger("gunpowder").setLevel(logging.WARNING)
 
-    experiment_directory = Path(HydraConfig.get().runtime.output_dir)
-
     model = instantiate(cfg.model)
 
     # Train the model
     train(
-        experiment_dir=experiment_directory,
         model=model,
+        file_path=cfg.gt.train,
         **cfg.train,
     )
 
