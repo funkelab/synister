@@ -1,7 +1,7 @@
 [project]
-name = {{cookiecutter.project_slug}}
-description = {{cookiecutter.project_description}}
-version = {{cookiecutter.project_version}}
+name = "{{cookiecutter.project_slug}}"
+description = "{{cookiecutter.project_description}}"
+version = "{{cookiecutter.project_version}}"
 readme = "README.md"
 requires-python = ">=3.11,<3.19"
 dependencies = [
