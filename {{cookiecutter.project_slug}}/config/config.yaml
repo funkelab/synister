@@ -1,0 +1,41 @@
+defaults: 
+  - _self_
+  - model: vgg # choose model, see options under config/model
+  - data: ??? # choose data, see options under config/data, or make your own
+  - train: base_train  # choose training config, see options under config/train, or make your own
+
+gt:
+  base: ??? # TODO specify the feather file containing all the ground truth
+  train: ??? # TODO specify the place to save the ground truth training set
+  val: ??? # TODO specify the place to save the ground truth validation set
+  num_transmitters: ??? # TODO specify the number of neurotransmitters
+  body_id: "body" # TODO specify the column name for the body id
+  nt_name: "nt_name" # TODO specify the column name for the neurotransmitter name
+  point_id: "point_id" # TODO specify the column name for the point id
+  x_col: "x" # TODO specify the column name for the x coordinate
+  y_col: "y" # TODO specify the column name for the y coordinate
+  z_col: "z" # TODO specify the column name for the z coordinate
+  
+
+train: 
+  experiment_dir: ??? # TODO specify the path to save the run results, will also be used to store checkpoints etc.
+  input_shape: # TODO specify the input shape of the model
+    - ???
+    - ???
+    - ???
+
+validate: 
+  batch_size: ???
+  container: ${data.container}
+  dataset: ${data.dataset}
+  num_transmitters: ${gt.num_transmitters}
+  experiment_dir: ${train.experiment_dir}
+  checkpoint_number: ???
+  input_shape: ${train.input_shape}
+  num_workers: 12
+  nt_name: ${gt.nt_name}
+  point_id: ${gt.point_id}
+  num_partitions: 10
+  partition_id: 1
+  output_dir: ??? # TODO specify the path to save the validation results, optional
+  spatial_order: ${oc.select:data.spatial_order,"zyx"}

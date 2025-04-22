@@ -1,0 +1,33 @@
+[project]
+name = "{{cookiecutter.project_slug}}"
+description = "{{cookiecutter.project_description}}"
+version = "{{cookiecutter.project_version}}"
+readme = "README.md"
+requires-python = ">=3.11,<3.19"
+dependencies = [
+    "pandas",
+    "gunpowder",
+    "numpy",
+    "tqdm",
+    "monai",
+    "pyarrow",
+    "tensorboardX",
+    "funlib.learn.torch @ git+https://github.com/funkelab/funlib.learn.torch.git",
+    "hydra-core",
+    "omegaconf",
+    "scikit-learn",
+    "matplotlib",
+]
+
+[tool.pixi.project]
+channels = ["https://prefix.dev/conda-forge"]
+platforms = ["linux-64"]
+
+[tool.pixi.pypi-dependencies]
+torch = { version = "*", index = "https://download.pytorch.org/whl/cu118" }
+torchvision = { version = "*", index = "https://download.pytorch.org/whl/cu118" }
+
+[tool.pixi.environments]
+default = { solve-group = "default" }
+
+[tool.pixi.tasks]
