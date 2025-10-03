@@ -11,9 +11,9 @@ tqdm
 tensorboardX
 notebook==6.1.4
 zarr
-git+git://github.com/nilsec/pymaid@master
+git+https://github.com/nilsec/pymaid@master
 -e git+https://github.com/funkey/gunpowder@754607abcd3c84ec28c0d2ea257b969934ce986d#egg=gunpowder
--e git+https://github.com/funkelab/daisy@0.3-dev#egg=daisy
+-e git+https://github.com/funkelab/daisy@master#egg=daisy
 -e git+https://github.com/funkelab/funlib.learn.torch@636813e60d48379d078b5458e40bdf23269631b3#egg=funlib.learn.torch
 -e git+https://github.com/funkelab/funlib.show.neuroglancer@master#egg=funlib.show.neuroglancer
 -e git+https://github.com/funkelab/funlib.math@master#egg=funlib.math

@@ -40,11 +40,10 @@ rm -rf /var/lib/apt/lists/*
 
 # install conda
 
-wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+wget https://repo.anaconda.com/miniconda/Miniconda3-py37_4.10.3-Linux-x86_64.sh -O miniconda.sh
 bash miniconda.sh -b -p /miniconda
 PATH="/miniconda/bin:$PATH"
 conda config --set always_yes yes --set changeps1 no
-conda update -q conda
 conda info -a
 conda install python=3.6
 
@@ -124,7 +123,7 @@ python setup.py build_ext --inplace
 PYTHONPATH=${FUNLIB_LEARN_ROOT}:$PYTHONPATH
 
 # install pytorch
-conda install pytorch torchvision cudatoolkit=10.2 -c pytorch
+conda install pytorch=1.10.2 torchvision==0.11.3 cudatoolkit=11.3 -c pytorch
 
 # install synister
 cd /src/synister
@@ -134,7 +133,7 @@ PYTHONPATH=/src/synister:$PYTHONPATH
 
 pip install mahotas
 pip install pymongo
-pip install opencv-python
+pip install opencv-python==4.2.0.34
 pip install iteration_utilities
 
 %environment

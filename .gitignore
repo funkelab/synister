@@ -1,1 +1,15 @@
+
+/.idea
 *.pyc
+
+/build
+/synister.egg-info
+/src
+
+/data/fafb_v3/mongodb.ini
+
+/singularity/requirements.txt
+/singularity/setup.py
+/singularity/synister
+/singularity/synister.img
+/singularity/src

@@ -30,11 +30,40 @@ class SynisterDb(object):
             self.credentials["host"] = config.get("Credentials", "host")
             self.credentials["port"] = config.get("Credentials", "port")
 
-        self.auth_string = 'mongodb://{}:{}@{}:{}'.format(self.credentials["user"],
-                                                          self.credentials["password"],
-                                                          self.credentials["host"],
-                                                          self.credentials["port"])
+            self.connection = {}
+            self.connection["is_srv"] = config.get("Connection", "is_srv").lower()
+            if self.connection["is_srv"] == "true":
+                self.connection["is_srv"] = True
+            elif self.connection["is_srv"] == "false":
+                self.connection["is_srv"] = False
+            else:
+                raise ValueError('"is_srv" must be "true" or "false".')
 
+            self.connection["options"] = config.get("Connection", "options")
+
+        auth_string_0 = 'mongodb'
+
+        auth_string_template_1 = '://{user:s}:{password:s}@{host:s}'
+
+        auth_string_1 = auth_string_template_1.format(
+            user=self.credentials["user"],
+            password=self.credentials["password"],
+            host=self.credentials["host"])
+
+        if self.connection["is_srv"]:
+            auth_string_0 += '+srv'
+        elif len(self.credentials["port"]) > 0:
+            try:
+                int(self.credentials["port"])
+                auth_string_1 += ':' + self.credentials["port"]
+            except ValueError:
+                raise ValueError('"port" must only contains numeric characters.')
+
+        self.auth_string = auth_string_0 + auth_string_1
+
+        if (len(self.connection["options"]) > 0) and self.connection["options"].__contains__('='):
+
+            self.auth_string += '/?' + self.connection["options"]
 
         self.collections = ["synapses", "skeletons", "hemi_lineages", "meta"]
 
